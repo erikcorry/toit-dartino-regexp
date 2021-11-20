@@ -19,8 +19,8 @@ class MiniExpLabel:
   bind codes/List/*<int>*/ -> none:
     assert: not isBound
     l /int := codes.size
-    for int forwardReference = location_; forwardReference != NO_LOCATION:
-      patchLocation / int := _decodeFixup forwardReference
+    for forwardReference := location_; forwardReference != NO_LOCATION; :
+      patchLocation /int := _decodeFixup forwardReference
       forwardReference = codes[patchLocation]
       codes[patchLocation] = l
     location_ = l
@@ -209,7 +209,7 @@ class MiniExpCompiler:
     if _extraConstants.isEmpty:
       return pattern
     else:
-      return pattern + String.fromCharCodes _extraConstants
+      return pattern + string.from_runes _extraConstants
 
   constantPoolEntry index/int -> int:
     if index < pattern.size: return pattern[index]
@@ -237,10 +237,10 @@ class MiniExpCompiler:
 
   void fail: return _emit FAIL
 
-  int allocateWorkingRegister: return allocateConstantRegister(0)
+  int allocateWorkingRegister: return allocateConstantRegister 0
 
   allocateConstantRegister value/int -> int:
-    int register = registers.size
+    register := registers.size
     registers.add value
     return register
 
@@ -251,45 +251,44 @@ class MiniExpCompiler:
     captureRegisterCount += 2
     return -captureRegisterCount + 1
 
-  addBackReference(BackReference b) -> none:
+  addBackReference b/BackReference -> none:
     _backReferences.add b
 
   addCaptureRegisters -> none:
     firstCaptureRegister = registers.size
-    for int i = 0; i < captureRegisterCount; i++:
+    for i := 0; i < captureRegisterCount; i++:
       registers.add NO_POSITION
     processBackRefences
 
   processBackRefences -> none:
-    for BackReference b in _backReferences:
+    _backReferences.do: | b |
       // 1-based index (you can't refer back to capture zero).
-      int numericIndex = int.parse b.index
-      if (b.index.codeUnitAt(0) == CHAR_CODE_0 or
-          numericIndex * 2 >= captureRegisterCount):
+      numericIndex := int.parse b.index
+      if b.index[0] == CHAR_CODE_0 or numericIndex * 2 >= captureRegisterCount:
         // Web compatible strangeness - if the index is more than the number of
         // captures it turns into an octal character code escape.
-        int codeUnit = 0
-        int octalsFound = 0
-        MiniExpAst replace
-        bool nonOctalsFound = false
+        codeUnit := 0
+        octalsFound := 0
+        replace /MiniExpAst? := null
+        nonOctalsFound := false
         // The first 0-3 octal digits form an octal character escape, the rest
         // are literals.
         for int octalDigit in b.index.codeUnits:
-          if (!nonOctalsFound and
-              CHAR_CODE_0 <= octalDigit and octalDigit <= CHAR_CODE_7 and
+          if (not nonOctalsFound) and
+              CHAR_CODE_0 <= octalDigit <= CHAR_CODE_7 and
               codeUnit * 8 < 0x100 and octalsFound < 3):
             codeUnit *= 8
             codeUnit += octalDigit - CHAR_CODE_0
             octalsFound++
           else:
-            int poolIndex = addToConstantPool octalDigit
-            MiniExpAst atom = new Atom poolIndex
-            replace = (replace == null) ? atom : new Alternative(replace, atom)
+            poolIndex := addToConstantPool octalDigit
+            atom /MiniExpAst := Atom poolIndex
+            replace = (replace == null) ? atom : Alternative replace atom
             nonOctalsFound = true
         if octalsFound != 0:
-          int poolIndex = addToConstantPool codeUnit
-          MiniExpAst atom = new Atom poolIndex
-          replace = (replace == null) ? atom : new Alternative(atom, replace)
+          poolIndex := addToConstantPool codeUnit
+          atom /MiniExpAst := Atom poolIndex
+          replace = (replace == null) ? atom : Alternative atom replace
         b.replaceWithAst replace
       else:
         b.register = firstCaptureRegister + numericIndex * 2
@@ -304,7 +303,7 @@ class MiniExpCompiler:
     _extraConstants.add codeUnit
     return pattern.size + _extraConstants.size - 1
 
-  pushBacktrack(MiniExpLabel label) -> none:
+  pushBacktrack label/MiniExpLabel -> none:
     _emit PUSH_BACKTRACK
     link label
 
@@ -317,7 +316,7 @@ class MiniExpCompiler:
   pop reg/int -> none:
     _emit(POP_REGISTER, registerNumber reg)
 
-  goto(MiniExpLabel label) -> none:
+  goto label/MiniExpLabel -> none:
     if _pendingGoto != label: flushPendingGoto
     _pendingGoto = label
 
@@ -327,73 +326,83 @@ class MiniExpCompiler:
       link _pendingGoto
       _pendingGoto = null
 
-  backtrackIfEqual(int register1, int register2) -> none:
-    _emit(BACKTRACK_EQ, registerNumber(register1), registerNumber(register2))
+  backtrackIfEqual register1/int register2/int -> none:
+    _emit BACKTRACK_EQ
+         registerNumber register1
+         registerNumber register2
 
-  backtrackIfNotEqual(int register1, int register2) -> none:
-    _emit(BACKTRACK_NE, registerNumber(register1), registerNumber(register2))
+  backtrackIfNotEqual register1/int register2/int -> none:
+    _emit BACKTRACK_NE
+        registerNumber register1
+        registerNumber register2
 
-  addToRegister(int reg, int offset) -> none:
-    _emit(ADD_TO_REGISTER, registerNumber reg, offset)
+  addToRegister reg/int offset/int -> none:
+    _emit ADD_TO_REGISTER
+        registerNumber reg  offset
 
-  copyRegister(int destRegister, int sourceRegister) -> none:
-    _emit(COPY_REGISTER, registerNumber destRegister,
-        registerNumber sourceRegister)
+  copyRegister destRegister/int sourceRegister/int -> none:
+    _emit COPY_REGISTER
+        registerNumber destRegister
+        registerNumber sourceRegister
 
-  backtrackOnBackReferenceFail(int register, bool caseSensitive) -> none:
-    _emit(BACKTRACK_ON_BACK_REFERENCE,
-          registerNumber register, caseSensitive ? 1 : 0)
+  backtrackOnBackReferenceFail register/int caseSensitive/bool -> none:
+    _emit BACKTRACK_ON_BACK_REFERENCE,
+        registerNumber register
+        caseSensitive ? 1 : 0
 
-  backtrackIfGreater(int register1, int register2) -> none:
-    _emit(BACKTRACK_GT, registerNumber(register1), registerNumber(register2))
+  backtrackIfGreater register1/int register2/int -> none:
+    _emit BACKTRACK_GT
+        registerNumber register1
+        registerNumber register2
 
-  gotoIfGreaterEqual(int register1, int register2, MiniExpLabel label) -> none:
-    _emit(GOTO_GE, registerNumber(register1), registerNumber(register2))
+  gotoIfGreaterEqual register1/int register2/int label/MiniExpLabel -> none:
+    _emit GOTO_GE
+        registerNumber register1
+        registerNumber register2
     link label
 
-  backtrackIfNoMatch(int constant_pool_offset) -> none:
-    _emit(BACKTRACK_IF_NO_MATCH, constant_pool_offset)
+  backtrackIfNoMatch constant_pool_offset/int -> none:
+    _emit BACKTRACK_IF_NO_MATCH constant_pool_offset
 
-  backtrackIfInRange(int from, int to) -> none:
-    _emit(BACKTRACK_IF_IN_RANGE, from, to)
+  backtrackIfInRange from/int to/int -> none:
+    _emit BACKTRACK_IF_IN_RANGE from to
 
-  gotoIfMatches(int charCode, MiniExpLabel label) -> none:
-    _emit(GOTO_IF_MATCH, charCode)
+  gotoIfMatches charCode/int label MiniExpLabel -> none:
+    _emit GOTO_IF_MATCH  charCode
     link label
 
-  gotoIfInRange(int from, int to, MiniExpLabel label) -> none:
+  gotoIfInRange from/int to/int label/MiniExpLabel -> none:
     if from == to:
-      gotoIfMatches(from, label)
+      gotoIfMatches from label
     else:
-      _emit(GOTO_IF_IN_RANGE, from, to)
+      _emit GOTO_IF_IN_RANGE from to
       link label
 
   backtrackIfNotAtWordBoundary -> none:
-    MiniExpLabel non_word_on_left = new MiniExpLabel
-    MiniExpLabel word_on_left = new MiniExpLabel
-    MiniExpLabel at_word_boundary = new MiniExpLabel
-    MiniExpLabel do_backtrack = new MiniExpLabel
+    MiniExpLabel non_word_on_left = MiniExpLabel
+    MiniExpLabel word_on_left = MiniExpLabel
+    MiniExpLabel at_word_boundary = MiniExpLabel
+    MiniExpLabel do_backtrack = MiniExpLabel
 
-    _emit(GOTO_EQ, CURRENT_POSITION, ZERO_REGISTER)
+    _emit GOTO_EQ CURRENT_POSITION ZERO_REGISTER
     link non_word_on_left
-    _emit(GOTO_IF_WORD_CHARACTER, -1)
+    _emit GOTO_IF_WORD_CHARACTER -1
     link word_on_left
 
     bind non_word_on_left
-    _emit(BACKTRACK_EQ, CURRENT_POSITION, STRING_LENGTH)
-    _emit(GOTO_IF_WORD_CHARACTER, 0)
+    _emit BACKTRACK_EQ CURRENT_POSITION STRING_LENGTH
+    _emit GOTO_IF_WORD_CHARACTER 0
     link at_word_boundary
     bind do_backtrack
     backtrack
 
     bind word_on_left
-    _emit(GOTO_EQ, CURRENT_POSITION, STRING_LENGTH)
+    _emit GOTO_EQ CURRENT_POSITION STRING_LENGTH
     link at_word_boundary
-    _emit(GOTO_IF_WORD_CHARACTER, 0)
+    _emit GOTO_IF_WORD_CHARACTER 0
     link do_backtrack
 
     bind at_word_boundary
-}
 
 // MiniExpAnalysis objects reflect properties of an AST subtree.  They are
 // immutable and are reused to some extent.
@@ -417,82 +426,77 @@ class MiniExpAnalysis:
   // tree) that it has registers it expects to be saved on the back edge.
   final List<int> registersToSave
 
-  static List<int> combineRegisters(List<int> left, List<int> right):
+  static List<int> combineRegisters left/List/*<int>*/ right/List/*<int>*/:
     if right == null or right.isEmpty:
       return left
     else if left == null or left.isEmpty:
       return right
     else:
-      return new List<int>()..addAll(left)..addAll(right)
+      return left + right  // List concatenation.
 
-  static int combineFixedLengths(MiniExpAnalysis left, MiniExpAnalysis right):
+  static combineFixedLengths left/MiniExpAnalysis right/MiniExpAnalysis -> int:
     if left.fixedLength == null or right.fixedLength == null:
       return null
     else:
       return left.fixedLength + right.fixedLength
 
-  MiniExpAnalysis.or(MiniExpAnalysis left, MiniExpAnalysis right)
-      : canMatchEmpty = left.canMatchEmpty or right.canMatchEmpty,
-        // Even if both alternatives are the same length we can't handle a
-        // disjunction without pushing backtracking information on the stack.
-        fixedLength = null,
-        anchored = left.anchored and right.anchored,
-        registersToSave =
-            combineRegisters(left.registersToSave, right.registersToSave)
+  constructor.or left/MiniExpAnalysis right/MiniExpAnalysis:
+    canMatchEmpty = left.canMatchEmpty or right.canMatchEmpty
+    // Even if both alternatives are the same length we can't handle a
+    // disjunction without pushing backtracking information on the stack.
+    fixedLength = null
+    anchored = left.anchored and right.anchored
+    registersToSave = combineRegisters left.registersToSave right.registersToSave
 
-  MiniExpAnalysis.and(MiniExpAnalysis left, MiniExpAnalysis right)
-      : canMatchEmpty = left.canMatchEmpty and right.canMatchEmpty,
-        fixedLength = combineFixedLengths(left, right),
-        anchored = left.anchored,
-        registersToSave =
-            combineRegisters(left.registersToSave, right.registersToSave)
+  constructor.and left/MiniExpAnalysis right/MiniExpAnalysis:
+    canMatchEmpty = left.canMatchEmpty and right.canMatchEmpty
+    fixedLength = combineFixedLengths left right
+    anchored = left.anchored
+    registersToSave = combineRegisters left.registersToSave right.registersToSave
 
-  const MiniExpAnalysis.empty()
-      : canMatchEmpty = true,
-        fixedLength = 0,
-        anchored = false,
-        registersToSave = null
+  constructor.empty:
+    canMatchEmpty = true
+    fixedLength = 0
+    anchored = false
+    registersToSave = null
 
-  const MiniExpAnalysis.atStart()
-      : canMatchEmpty = true,
-        fixedLength = 0,
-        anchored = true,
-        registersToSave = null
+  constructor.atStart:
+    canMatchEmpty = true
+    fixedLength = 0
+    anchored = true
+    registersToSave = null
 
-  MiniExpAnalysis.lookahead(MiniExpAnalysis bodyAnalysis, bool positive)
-      : canMatchEmpty = true,
-        fixedLength = 0,
-        anchored = positive and bodyAnalysis.anchored,
-        registersToSave = bodyAnalysis.registersToSave
+  constructor.lookahead bodyAnalysis/MiniExpAnalysis positive/bool:
+    canMatchEmpty = true
+    fixedLength = 0
+    anchored = positive and bodyAnalysis.anchored
+    registersToSave = bodyAnalysis.registersToSave
 
-  MiniExpAnalysis.quantifier(
-      MiniExpAnalysis bodyAnalysis, int min, int max, List<int> regs)
-      : canMatchEmpty = min == 0 or bodyAnalysis.canMatchEmpty,
-        fixedLength = (min == 1 and max == 1) ? bodyAnalysis.fixedLength : null,
-        anchored = min > 0 and bodyAnalysis.anchored,
-        registersToSave = combineRegisters(bodyAnalysis.registersToSave, regs)
+  constructor.quantifier bodyAnalysis/MiniExpAnalysis min/int max/int regs/List/*<int>*/:
+    canMatchEmpty = min == 0 or bodyAnalysis.canMatchEmpty
+    fixedLength = (min == 1 and max == 1) ? bodyAnalysis.fixedLength : null
+    anchored = min > 0 and bodyAnalysis.anchored
+    registersToSave = combineRegisters bodyAnalysis.registersToSave regs
 
-  const MiniExpAnalysis.atom()
-      : canMatchEmpty = false,
-        fixedLength = 1,
-        anchored = false,
-        registersToSave = null
+  constructor.atom:
+    canMatchEmpty = false
+    fixedLength = 1
+    anchored = false
+    registersToSave = null
 
-  const MiniExpAnalysis.knowNothing()
-      : canMatchEmpty = true,
-        fixedLength = null,
-        anchored = false,
-        registersToSave = null
+  constructor.knowNothing:
+    canMatchEmpty = true
+    fixedLength = null
+    anchored = false
+    registersToSave = null
 
-  MiniExpAnalysis.capture(MiniExpAnalysis bodyAnalysis, int start, int end)
-      : canMatchEmpty = bodyAnalysis.canMatchEmpty,
-        // We can't generate a capture without pushing backtracking information
-        // on the stack.
-        fixedLength = null,
-        anchored = bodyAnalysis.anchored,
-        registersToSave =
-            combineRegisters(bodyAnalysis.registersToSave, <int>[start, end])
-}
+  constructor.capture bodyAnalysis/MiniExpAnalysis start/int end/int:
+    canMatchEmpty = bodyAnalysis.canMatchEmpty
+    // We can't generate a capture without pushing backtracking information
+    // on the stack.
+    fixedLength = null
+    anchored = bodyAnalysis.anchored
+    registersToSave = combineRegisters bodyAnalysis.registersToSave, [start, end]
 
 abstract class MiniExpAst:
   // When generating code for an AST, note that:
@@ -505,13 +509,12 @@ abstract class MiniExpAst:
   //   push anything else, then you have to push a backtrack location that will
   //   clean it up.  On entry you can assume there is a backtrack pair on the
   //   top of the stack.
-  void generate(MiniExpCompiler compiler, MiniExpLabel onSuccess)
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none
 
-  MiniExpAnalysis analyze(MiniExpCompiler)
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis
 
   // Label is bound at the entry point for the AST tree.
-  final MiniExpLabel label = new MiniExpLabel
-}
+  label ::= MiniExpLabel
 
 class Disjunction extends MiniExpAst:
   final MiniExpAst _left
