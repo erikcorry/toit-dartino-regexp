@@ -923,7 +923,7 @@ class CharClass extends MiniExpAst:
     _ranges.add from
     _ranges.add to
 
-  static const List<int> _spaceCodes = const <int>[
+  static _spaceCodes/List/*<int>*/ = [
     -1,
     CHAR_CODE_TAB, CHAR_CODE_CARRIAGE_RETURN,
     CHAR_CODE_SPACE, CHAR_CODE_SPACE,
@@ -1529,41 +1529,41 @@ class MiniExpParser:
 
   bool peekToken(Token token) => token == _lastToken
 
-  static const CHARCODE_TO_TOKEN = const <Token>[
-    OTHER, OTHER, OTHER, OTHER,    // 0-3
-    OTHER, OTHER, OTHER, OTHER,    // 4-7
-    OTHER, OTHER, OTHER, OTHER,    // 8-11
-    OTHER, OTHER, OTHER, OTHER,    // 12-15
-    OTHER, OTHER, OTHER, OTHER,    // 16-19
-    OTHER, OTHER, OTHER, OTHER,    // 20-23
-    OTHER, OTHER, OTHER, OTHER,    // 24-27
-    OTHER, OTHER, OTHER, OTHER,    // 28-31
-    OTHER, OTHER, OTHER, OTHER,    //  !"#
-    DOLLAR, OTHER, OTHER, OTHER,   // $%&'
+  static CHARCODE_TO_TOKEN ::= [
+    OTHER, OTHER, OTHER, OTHER,      // 0-3
+    OTHER, OTHER, OTHER, OTHER,      // 4-7
+    OTHER, OTHER, OTHER, OTHER,      // 8-11
+    OTHER, OTHER, OTHER, OTHER,      // 12-15
+    OTHER, OTHER, OTHER, OTHER,      // 16-19
+    OTHER, OTHER, OTHER, OTHER,      // 20-23
+    OTHER, OTHER, OTHER, OTHER,      // 24-27
+    OTHER, OTHER, OTHER, OTHER,      // 28-31
+    OTHER, OTHER, OTHER, OTHER,      //  !"#
+    DOLLAR, OTHER, OTHER, OTHER,     // $%&'
     L_PAREN, R_PAREN, QUANT, QUANT,  // ()*+,
-    OTHER, OTHER, DOT, OTHER,      // ,-./
-    OTHER, OTHER, OTHER, OTHER,    // 0123
-    OTHER, OTHER, OTHER, OTHER,    // 4567
-    OTHER, OTHER, OTHER, OTHER,    // 89:
-    OTHER, OTHER, OTHER, QUANT,    // <=>?
-    OTHER, OTHER, OTHER, OTHER,    // @ABC
-    OTHER, OTHER, OTHER, OTHER,    // DEFG
-    OTHER, OTHER, OTHER, OTHER,    // HIJK
-    OTHER, OTHER, OTHER, OTHER,    // LMNO
-    OTHER, OTHER, OTHER, OTHER,    // PQRS
-    OTHER, OTHER, OTHER, OTHER,    // TUVW
-    OTHER, OTHER, OTHER, L_SQUARE,  // XYZ[
-    BACKSLASH, OTHER, HAT, OTHER,  // \]^_
-    OTHER, OTHER, OTHER, OTHER,    // `abc
-    OTHER, OTHER, OTHER, OTHER,    // defg
-    OTHER, OTHER, OTHER, OTHER,    // hijk
-    OTHER, OTHER, OTHER, OTHER,    // lmno
-    OTHER, OTHER, OTHER, OTHER,    // pqrs
-    OTHER, OTHER, OTHER, OTHER,    // tuvw
-    OTHER, OTHER, OTHER, QUANT,    // xyz{
-    PIPE, OTHER];                              // |}
+    OTHER, OTHER, DOT, OTHER,        // ,-./
+    OTHER, OTHER, OTHER, OTHER,      // 0123
+    OTHER, OTHER, OTHER, OTHER,      // 4567
+    OTHER, OTHER, OTHER, OTHER,      // 89:
+    OTHER, OTHER, OTHER, QUANT,      // <=>?
+    OTHER, OTHER, OTHER, OTHER,      // @ABC
+    OTHER, OTHER, OTHER, OTHER,      // DEFG
+    OTHER, OTHER, OTHER, OTHER,      // HIJK
+    OTHER, OTHER, OTHER, OTHER,      // LMNO
+    OTHER, OTHER, OTHER, OTHER,      // PQRS
+    OTHER, OTHER, OTHER, OTHER,      // TUVW
+    OTHER, OTHER, OTHER, L_SQUARE,   // XYZ[
+    BACKSLASH, OTHER, HAT, OTHER,    // \]^_
+    OTHER, OTHER, OTHER, OTHER,      // `abc
+    OTHER, OTHER, OTHER, OTHER,      // defg
+    OTHER, OTHER, OTHER, OTHER,      // hijk
+    OTHER, OTHER, OTHER, OTHER,      // lmno
+    OTHER, OTHER, OTHER, OTHER,      // pqrs
+    OTHER, OTHER, OTHER, OTHER,      // tuvw
+    OTHER, OTHER, OTHER, QUANT,      // xyz{
+    PIPE, OTHER];                    // |}
 
-  static const ESCAPES = const:
+  static ESCAPES ::= {
     CHAR_CODE_LOWER_B: WORD_BOUNDARY,
     CHAR_CODE_UPPER_B: NOT_WORD_BOUNDARY,
     CHAR_CODE_LOWER_W: WORD_CHARACTER,
@@ -1571,21 +1571,23 @@ class MiniExpParser:
     CHAR_CODE_LOWER_D: DIGIT,
     CHAR_CODE_UPPER_D: NOT_DIGIT,
     CHAR_CODE_LOWER_S: WHITESPACE,
-    CHAR_CODE_UPPER_S: NOT_WHITESPACE
+    CHAR_CODE_UPPER_S: NOT_WHITESPACE,
+  }
 
-  static const CONTROL_CHARACTERS = const:
+  static CONTROL_CHARACTERS ::= {
     CHAR_CODE_LOWER_B: CHAR_CODE_BACKSPACE,
     CHAR_CODE_LOWER_F: CHAR_CODE_FORM_FEED,
     CHAR_CODE_LOWER_N: CHAR_CODE_NEWLINE,
     CHAR_CODE_LOWER_R: CHAR_CODE_CARRIAGE_RETURN,
     CHAR_CODE_LOWER_T: CHAR_CODE_TAB,
-    CHAR_CODE_LOWER_V: CHAR_CODE_VERTICAL_TAB
+    CHAR_CODE_LOWER_V: CHAR_CODE_VERTICAL_TAB,
+  }
 
-  static Token tokenFromCharcode(int code):
+  static tokenFromCharcode code/int -> Token:
     if code >= CHARCODE_TO_TOKEN.size: return OTHER
     return CHARCODE_TO_TOKEN[code]
 
-  bool onDigit(int _position):
+  onDigit _position/int -> bool:
     if not _has _position: return false
     if (_at _position) < CHAR_CODE_0: return false
     return (_at _position) <= CHAR_CODE_9
@@ -1608,18 +1610,18 @@ class MiniExpParser:
 
   // This may be a bug in Irregexp, but there are tests for it: \c_ and \c0
   // work like \cc which means Control-C.  But only in character classes.
-  static bool isBackslashCCharacter code/int:
-    if (isAsciiLetter code) return true
-    if code >= CHAR_CODE_0 and code <= CHAR_CODE_9: return true
+  static isBackslashCCharacter code/int -> bool:
+    if isAsciiLetter code: return true
+    if CHAR_CODE_0 <= code <= CHAR_CODE_9: return true
     return code == CHAR_CODE_UNDERSCORE
 
   static bool isAsciiLetter code/int:
-    if code >= CHAR_CODE_UPPER_A and code <= CHAR_CODE_UPPER_Z: return true
-    return code >= CHAR_CODE_LOWER_A and code <= CHAR_CODE_LOWER_Z
+    if CHAR_CODE_UPPER_A <= code <= CHAR_CODE_UPPER_Z: return true
+    return CHAR_CODE_LOWER_A <= code <= CHAR_CODE_LOWER_Z
 
   lexBackslash -> none:
-    if (!_has(_position + 1)) error("\\ at end of pattern")
-    int nextCode = _at(_position + 1)
+    if not _has(_position + 1): error("\\ at end of pattern")
+    nextCode/int := _at _position + 1
     if ESCAPES.containsKey nextCode:
       _position += 2
       _lastToken = ESCAPES[nextCode]
@@ -1627,18 +1629,18 @@ class MiniExpParser:
       _position += 2
       _lastToken = OTHER
       _lastTokenIndex =
-          _compiler.addToConstantPool(CONTROL_CHARACTERS[nextCode])
+          _compiler.addToConstantPool CONTROL_CHARACTERS[nextCode]
     else if nextCode == CHAR_CODE_LOWER_C:
-       if _has(_position + 2) and isAsciiLetter(_at(_position + 2)):
+       if (_has _position + 2) and (isAsciiLetter (_at _position + 2)):
          _lastToken = OTHER
-         _lastTokenIndex = _compiler.addToConstantPool(_at(_position + 2) % 32)
+         _lastTokenIndex = _compiler.addToConstantPool (_at _position + 2) % 32
          _position += 3
        else:
          // \c_ is interpreted as a literal backslash and literal "c_".
          _lastToken = OTHER
          _lastTokenIndex = _position
          _position++
-    else if onDigit(_position + 1):
+    else if onDigit _position + 1:
       _position++
       _lastBackReferenceIndex = lexIntegerAsString
       _lastToken = BACK_REFERENCE
