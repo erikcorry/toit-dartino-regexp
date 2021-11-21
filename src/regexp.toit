@@ -129,52 +129,9 @@ BYTE_CODE_NAMES ::= [
   "FAIL", 0, 0,
 ]
 
-CHAR_CODE_NUL ::= 0
 CHAR_CODE_BACKSPACE ::= 8
-CHAR_CODE_TAB ::= 9
-CHAR_CODE_NEWLINE ::= 10
 CHAR_CODE_VERTICAL_TAB ::= 11
 CHAR_CODE_FORM_FEED ::= 12
-CHAR_CODE_CARRIAGE_RETURN ::= 13
-CHAR_CODE_SPACE ::= 32
-CHAR_CODE_BANG ::= 33
-CHAR_CODE_ASTERISK ::= 42
-CHAR_CODE_PLUS ::= 43
-CHAR_CODE_COMMA ::= 44
-CHAR_CODE_DASH ::= 45
-CHAR_CODE_0 ::= 48
-CHAR_CODE_7 ::= 55
-CHAR_CODE_9 ::= 57
-CHAR_CODE_COLON ::= 58
-CHAR_CODE_EQUALS ::= 61
-CHAR_CODE_QUERY ::= 63
-CHAR_CODE_UPPER_A ::= 65
-CHAR_CODE_UPPER_B ::= 66
-CHAR_CODE_UPPER_D ::= 68
-CHAR_CODE_UPPER_F ::= 70
-CHAR_CODE_UPPER_S ::= 83
-CHAR_CODE_UPPER_W ::= 87
-CHAR_CODE_UPPER_Z ::= 90
-CHAR_CODE_BACKSLASH ::= 92
-CHAR_CODE_R_SQUARE ::= 93
-CHAR_CODE_CARET ::= 94
-CHAR_CODE_UNDERSCORE ::= 95
-CHAR_CODE_LOWER_A ::= 97
-CHAR_CODE_LOWER_B ::= 98
-CHAR_CODE_LOWER_C ::= 99
-CHAR_CODE_LOWER_D ::= 100
-CHAR_CODE_LOWER_F ::= 102
-CHAR_CODE_LOWER_N ::= 110
-CHAR_CODE_LOWER_R ::= 114
-CHAR_CODE_LOWER_S ::= 115
-CHAR_CODE_LOWER_T ::= 116
-CHAR_CODE_LOWER_U ::= 117
-CHAR_CODE_LOWER_V ::= 118
-CHAR_CODE_LOWER_W ::= 119
-CHAR_CODE_LOWER_X ::= 120
-CHAR_CODE_LOWER_Z ::= 122
-CHAR_CODE_L_BRACE ::= 123
-CHAR_CODE_R_BRACE ::= 125
 CHAR_CODE_NO_BREAK_SPACE ::= 0xa0
 CHAR_CODE_OGHAM_SPACE_MARK ::= 0x1680
 CHAR_CODE_EN_QUAD ::= 0x2000
@@ -264,7 +221,7 @@ class MiniExpCompiler:
     _backReferences.do: | b |
       // 1-based index (you can't refer back to capture zero).
       numericIndex := int.parse b.index
-      if b.index[0] == CHAR_CODE_0 or numericIndex * 2 >= captureRegisterCount:
+      if b.index[0] == '0' or numericIndex * 2 >= captureRegisterCount:
         // Web compatible strangeness - if the index is more than the number of
         // captures it turns into an octal character code escape.
         codeUnit := 0
@@ -275,10 +232,10 @@ class MiniExpCompiler:
         // are literals.
         b.index.codeUnits.do: | octalDigit |
           if (not nonOctalsFound) and
-              CHAR_CODE_0 <= octalDigit <= CHAR_CODE_7 and
+              '0' <= octalDigit <= '7' and
               codeUnit * 8 < 0x100 and octalsFound < 3:
             codeUnit *= 8
-            codeUnit += octalDigit - CHAR_CODE_0
+            codeUnit += octalDigit - '0'
             octalsFound++
           else:
             poolIndex := addToConstantPool octalDigit
@@ -579,14 +536,14 @@ class AtEnd extends Assertion:
 abstract class MultiLineAssertion extends Assertion:
   backtrackIfNotNewline compiler/MiniExpCompiler -> none:
     compiler.backtrackIfInRange
-        CHAR_CODE_CARRIAGE_RETURN + 1
+        '\r' + 1
         CHAR_CODE_LINE_SEPARATOR - 1
     compiler.backtrackIfInRange
         0
-        CHAR_CODE_NEWLINE - 1
+        '\n' - 1
     compiler.backtrackIfInRange 
-        CHAR_CODE_NEWLINE + 1
-        CHAR_CODE_CARRIAGE_RETURN - 1
+        '\n' + 1
+        '\r' - 1
     compiler.backtrackIfInRange
         CHAR_CODE_PARAGRAPH_SEPARATOR + 1
         0xffff
@@ -924,8 +881,8 @@ class CharClass extends MiniExpAst:
 
   static _spaceCodes/List/*<int>*/ := [
     -1,
-    CHAR_CODE_TAB, CHAR_CODE_CARRIAGE_RETURN,
-    CHAR_CODE_SPACE, CHAR_CODE_SPACE,
+    '\t', '\r',
+    ' ', ' ',
     CHAR_CODE_NO_BREAK_SPACE, CHAR_CODE_NO_BREAK_SPACE,
     CHAR_CODE_OGHAM_SPACE_MARK, CHAR_CODE_OGHAM_SPACE_MARK,
     CHAR_CODE_EN_QUAD, CHAR_CODE_HAIR_SPACE,
@@ -946,32 +903,32 @@ class CharClass extends MiniExpAst:
           _spaceCodes[i + 1] - 1
 
   addSpecial charCode/int -> none:
-    if charCode == CHAR_CODE_LOWER_D:
-      add CHAR_CODE_0 CHAR_CODE_9
-    else if charCode == CHAR_CODE_UPPER_D:
+    if charCode == 'd':
+      add '0' '9'
+    else if charCode == 'D':
       add 0
-          CHAR_CODE_0 - 1
-      add CHAR_CODE_9 + 1
+          '0' - 1
+      add '9' + 1
           0xffff
-    else if charCode == CHAR_CODE_LOWER_S:
+    else if charCode == 's':
       addSpaces
-    else if charCode == CHAR_CODE_UPPER_S:
+    else if charCode == 'S':
       addNotSpaces
-    else if charCode == CHAR_CODE_LOWER_W:
-      add CHAR_CODE_0 CHAR_CODE_9
-      add CHAR_CODE_UPPER_A CHAR_CODE_UPPER_Z
-      add CHAR_CODE_UNDERSCORE CHAR_CODE_UNDERSCORE
-      add CHAR_CODE_LOWER_A CHAR_CODE_LOWER_Z
-    else if charCode == CHAR_CODE_UPPER_W:
+    else if charCode == 'w':
+      add '0' '9'
+      add 'A' 'Z'
+      add '_' '_'
+      add 'a' 'z'
+    else if charCode == 'W':
       add 0
-          CHAR_CODE_0 - 1 
-      add CHAR_CODE_9 + 1
-          CHAR_CODE_UPPER_A - 1
-      add CHAR_CODE_UPPER_Z + 1
-          CHAR_CODE_UNDERSCORE - 1
-      add CHAR_CODE_UNDERSCORE + 1
-          CHAR_CODE_LOWER_A - 1
-      add CHAR_CODE_LOWER_Z + 1
+          '0' - 1 
+      add '9' + 1
+          'A' - 1
+      add 'Z' + 1
+          '_' - 1
+      add '_' + 1
+          'a' - 1
+      add 'z' + 1
           0xffff
 
   caseInsensitiveRanges oldRanges/List/*<int>*/ -> List/*<int>*/:
@@ -1379,8 +1336,8 @@ class MiniExpParser:
       return result
     if acceptToken DOT:
       ast := CharClass false  // Negative char class.
-      ast.add CHAR_CODE_NEWLINE CHAR_CODE_NEWLINE
-      ast.add CHAR_CODE_CARRIAGE_RETURN CHAR_CODE_CARRIAGE_RETURN
+      ast.add '\n' '\n'
+      ast.add '\r' '\r'
       ast.add CHAR_CODE_LINE_SEPARATOR CHAR_CODE_PARAGRAPH_SEPARATOR
       return ast
 
@@ -1412,11 +1369,11 @@ class MiniExpParser:
       charClass = CharClass false
       digitCharClass = true
     if charClass != null:
-      charClass.add CHAR_CODE_0 CHAR_CODE_9
+      charClass.add '0' '9'
       if not digitCharClass:
-        charClass.add CHAR_CODE_UPPER_A CHAR_CODE_UPPER_Z
-        charClass.add CHAR_CODE_UNDERSCORE CHAR_CODE_UNDERSCORE
-        charClass.add CHAR_CODE_LOWER_A CHAR_CODE_LOWER_Z
+        charClass.add 'A' 'Z'
+        charClass.add '_' '_'
+        charClass.add 'a' 'z'
       return charClass
 
     if acceptToken WHITESPACE:
@@ -1441,7 +1398,7 @@ class MiniExpParser:
       else:
         charClass.add code code
 
-    if (_has _position) and (_at _position) == CHAR_CODE_CARET:
+    if (_has _position) and (_at _position) == '^':
       _position++
       charClass = CharClass false
     else:
@@ -1449,7 +1406,7 @@ class MiniExpParser:
     while _has _position:
       code/int := _at _position
       degenerateRange := false
-      if code == CHAR_CODE_R_SQUARE:
+      if code == ']':
         // End of character class.  This reads the terminating square bracket.
         getToken
         break
@@ -1458,8 +1415,8 @@ class MiniExpParser:
 
       // Check if there are at least 2 more characters and the next is a dash.
       if (not _has _position + 1) or
-         (_at _position) != CHAR_CODE_DASH or
-         (_at _position + 1) == CHAR_CODE_R_SQUARE:
+         (_at _position) != '-' or
+         (_at _position + 1) == ']':
         // No dash-something here, so it's not part of a range.  Add the code
         // and move on.
         addCharCode.call code
@@ -1471,7 +1428,7 @@ class MiniExpParser:
         // One end of the range is not a single character, so the range is
         // degenerate.  We add either and and the dash, instead of a range.
         addCharCode.call code
-        charClass.add CHAR_CODE_DASH CHAR_CODE_DASH
+        charClass.add '-' '-'
         addCharCode.call code2
       else:
         // Found a range.
@@ -1484,17 +1441,17 @@ class MiniExpParser:
   // indicating the position of a character class special \s \d or \w.
   _readCharacterClassCode -> int:
     code/int := _at _position
-    if code != CHAR_CODE_BACKSLASH:
+    if code != '\\':
       _position++
       return code
     if not _has _position + 1: error "Unexpected end of regexp"
     code2/int := _at _position + 1
     lower/int := code2 | 0x20
-    if (lower == CHAR_CODE_LOWER_D or lower == CHAR_CODE_LOWER_S or lower == CHAR_CODE_LOWER_W):
+    if (lower == 'd' or lower == 's' or lower == 'w'):
       answer := -_position
       _position += 2
       return answer
-    if code2 == CHAR_CODE_LOWER_C:
+    if code2 == 'c':
       // For web compatibility, the set of characters that can follow \c inside
       // a character class is different from the a-zA-Z that are allowed outside
       // a character class.
@@ -1505,14 +1462,14 @@ class MiniExpParser:
       // invalid character is interpreted as a literal backslash, followed by
       // the "c", etc.
       _position++
-      return CHAR_CODE_BACKSLASH
-    if CHAR_CODE_0 <= code2 and code2 <= CHAR_CODE_9:
+      return '\\'
+    if '0' <= code2 and code2 <= '9':
       _position++
       return lexInteger 8 0x100
     _position += 2
-    if code2 == CHAR_CODE_LOWER_U:
+    if code2 == 'u':
       code = lexHex 4
-    else if code2 == CHAR_CODE_LOWER_X:
+    else if code2 == 'x':
       code = lexHex 2
     else if CONTROL_CHARACTERS.containsKey(code2):
       code = CONTROL_CHARACTERS[code2]
@@ -1571,23 +1528,23 @@ class MiniExpParser:
     PIPE, OTHER]                     // |}
 
   static ESCAPES ::= {
-    CHAR_CODE_LOWER_B: WORD_BOUNDARY,
-    CHAR_CODE_UPPER_B: NOT_WORD_BOUNDARY,
-    CHAR_CODE_LOWER_W: WORD_CHARACTER,
-    CHAR_CODE_UPPER_W: NOT_WORD_CHARACTER,
-    CHAR_CODE_LOWER_D: DIGIT,
-    CHAR_CODE_UPPER_D: NOT_DIGIT,
-    CHAR_CODE_LOWER_S: WHITESPACE,
-    CHAR_CODE_UPPER_S: NOT_WHITESPACE,
+    'b': WORD_BOUNDARY,
+    'B': NOT_WORD_BOUNDARY,
+    'w': WORD_CHARACTER,
+    'W': NOT_WORD_CHARACTER,
+    'd': DIGIT,
+    'D': NOT_DIGIT,
+    's': WHITESPACE,
+    'S': NOT_WHITESPACE,
   }
 
   static CONTROL_CHARACTERS ::= {
-    CHAR_CODE_LOWER_B: CHAR_CODE_BACKSPACE,
-    CHAR_CODE_LOWER_F: CHAR_CODE_FORM_FEED,
-    CHAR_CODE_LOWER_N: CHAR_CODE_NEWLINE,
-    CHAR_CODE_LOWER_R: CHAR_CODE_CARRIAGE_RETURN,
-    CHAR_CODE_LOWER_T: CHAR_CODE_TAB,
-    CHAR_CODE_LOWER_V: CHAR_CODE_VERTICAL_TAB,
+    'b': CHAR_CODE_BACKSPACE,
+    'f': CHAR_CODE_FORM_FEED,
+    'n': '\n',
+    'r': '\r',
+    't': '\t',
+    'v': CHAR_CODE_VERTICAL_TAB,
   }
 
   static tokenFromCharcode code/int -> int:
@@ -1596,8 +1553,8 @@ class MiniExpParser:
 
   onDigit _position/int -> bool:
     if not _has _position: return false
-    if (_at _position) < CHAR_CODE_0: return false
-    return (_at _position) <= CHAR_CODE_9
+    if (_at _position) < '0': return false
+    return (_at _position) <= '9'
 
   getToken -> none:
     if not _has _position:
@@ -1620,12 +1577,12 @@ class MiniExpParser:
   // work like \cc which means Control-C.  But only in character classes.
   static isBackslashCCharacter code/int -> bool:
     if isAsciiLetter code: return true
-    if CHAR_CODE_0 <= code <= CHAR_CODE_9: return true
-    return code == CHAR_CODE_UNDERSCORE
+    if '0' <= code <= '9': return true
+    return code == '_'
 
   static isAsciiLetter code/int -> bool:
-    if CHAR_CODE_UPPER_A <= code <= CHAR_CODE_UPPER_Z: return true
-    return CHAR_CODE_LOWER_A <= code <= CHAR_CODE_LOWER_Z
+    if 'A' <= code <= 'Z': return true
+    return 'a' <= code <= 'z'
 
   lexBackslash -> none:
     if not _has(_position + 1): error "\\ at end of pattern"
@@ -1638,7 +1595,7 @@ class MiniExpParser:
       _lastToken = OTHER
       _lastTokenIndex =
           _compiler.addToConstantPool CONTROL_CHARACTERS[nextCode]
-    else if nextCode == CHAR_CODE_LOWER_C:
+    else if nextCode == 'c':
        if (_has _position + 2) and (isAsciiLetter (_at _position + 2)):
          _lastToken = OTHER
          _lastTokenIndex = _compiler.addToConstantPool (_at _position + 2) % 32
@@ -1652,10 +1609,10 @@ class MiniExpParser:
       _position++
       _lastBackReferenceIndex = lexIntegerAsString
       _lastToken = BACK_REFERENCE
-    else if nextCode == CHAR_CODE_LOWER_X or nextCode == CHAR_CODE_LOWER_U:
+    else if nextCode == 'x' or nextCode == 'u':
       _position += 2
       _lastToken = OTHER
-      codeUnit := lexHex(nextCode == CHAR_CODE_LOWER_X ? 2 : 4)
+      codeUnit := lexHex(nextCode == 'x' ? 2 : 4)
       if codeUnit == -1:
         _lastTokenIndex = _position - 1
       else:
@@ -1671,14 +1628,14 @@ class MiniExpParser:
     for i := 0; i < chars; i++:
       total *= 16
       charCode := _at _position + i
-      if charCode >= CHAR_CODE_0 and charCode <= CHAR_CODE_9:
-        total += charCode - CHAR_CODE_0
-      else if (charCode >= CHAR_CODE_UPPER_A and
-                 charCode <= CHAR_CODE_UPPER_F):
-        total += 10 + charCode - CHAR_CODE_UPPER_A
-      else if (charCode >= CHAR_CODE_LOWER_A and
-                 charCode <= CHAR_CODE_LOWER_F):
-        total += 10 + charCode - CHAR_CODE_LOWER_A
+      if charCode >= '0' and charCode <= '9':
+        total += charCode - '0'
+      else if (charCode >= 'A' and
+                 charCode <= 'F'):
+        total += 10 + charCode - 'A'
+      else if (charCode >= 'a' and
+                 charCode <= 'f'):
+        total += 10 + charCode - 'a'
       else:
         return -1
     _position += chars
@@ -1689,7 +1646,7 @@ class MiniExpParser:
     while true:
       if not _has _position: return b.toString
       code := _at _position
-      if code >= CHAR_CODE_0 and code <= CHAR_CODE_9:
+      if code >= '0' and code <= '9':
         b.write(String.fromCharCode code)
         _position++
       else:
@@ -1700,24 +1657,23 @@ class MiniExpParser:
     while true:
       if not _has _position: return total
       code := _at _position
-      if (code >= CHAR_CODE_0 and code < CHAR_CODE_0 + base and
-          (max == null or total * base < max)):
+      if code >= '0' and code < '0' + base and (max == null or total * base < max):
         _position++
         total *= base
-        total += code - CHAR_CODE_0
+        total += code - '0'
       else:
         return total
 
   lexLeftParenthesis -> none:
     if not _has _position + 1: error "unterminated group"
-    if _at(_position + 1) == CHAR_CODE_QUERY:
+    if (_at _position + 1) == '?':
       if not _has _position + 2: error "unterminated group"
       parenthesisModifier/int := _at _position + 2
-      if parenthesisModifier == CHAR_CODE_EQUALS:
+      if parenthesisModifier == '=':
         _lastToken = LOOK_AHEAD
-      else if parenthesisModifier == CHAR_CODE_COLON:
+      else if parenthesisModifier == ':':
         _lastToken = NON_CAPTURING
-      else if parenthesisModifier == CHAR_CODE_BANG:
+      else if parenthesisModifier == '!':
         _lastToken = NEGATIVE_LOOK_AHEAD
       else:
         error "invalid group"
@@ -1726,7 +1682,7 @@ class MiniExpParser:
 
   lexQuantifier -> none:
     quantifierCode/int := _at _position
-    if quantifierCode == CHAR_CODE_L_BRACE:
+    if quantifierCode == '{':
       parsedRepeats := false
       savedPosition := _position
       if onDigit(_position + 1):
@@ -1735,18 +1691,18 @@ class MiniExpParser:
         // and {n,m}.
         _minimumRepeats = lexInteger 10 null
         if _has _position:
-          if _at _position == CHAR_CODE_R_BRACE:
+          if _at _position == '}':
             _maximumRepeats = _minimumRepeats
             parsedRepeats = true
-          else if _at _position == CHAR_CODE_COMMA:
+          else if _at _position == ',':
             _position++
             if _has _position:
-              if _at _position == CHAR_CODE_R_BRACE:
+              if _at _position == '}':
                 _maximumRepeats = null;  // No maximum.
                 parsedRepeats = true
               else if onDigit _position:
                 _maximumRepeats = lexInteger 10 null
-                if (_has _position) and (_at _position) == CHAR_CODE_R_BRACE:
+                if (_has _position) and (_at _position) == '}':
                   parsedRepeats = true
       if parsedRepeats:
         if _maximumRepeats != null and _minimumRepeats > _maximumRepeats:
@@ -1757,17 +1713,17 @@ class MiniExpParser:
         _position = savedPosition
         _lastToken = OTHER
         return
-    else if quantifierCode == CHAR_CODE_ASTERISK:
+    else if quantifierCode == '*':
       _minimumRepeats = 0
       _maximumRepeats = null;  // No maximum.
-    else if quantifierCode == CHAR_CODE_PLUS:
+    else if quantifierCode == '+':
       _minimumRepeats = 1
       _maximumRepeats = null;  // No maximum.
     else:
       _minimumRepeats = 0
       _maximumRepeats = 1
     if (_has(_position + 1) and
-        _at(_position + 1) == CHAR_CODE_QUERY):
+        _at(_position + 1) == '?'):
       _position++
       _lastWasGreedy = false
     else:
@@ -1911,16 +1867,16 @@ class MiniExpInterpreter:
           int charCode =
               subject.codeUnitAt _registers[CURRENT_POSITION] + offset
           int dest = _byteCodes[programCounter++]
-          if charCode >= CHAR_CODE_0:
-            if charCode <= CHAR_CODE_9:
+          if charCode >= '0':
+            if charCode <= '9':
               programCounter = dest
-            else if charCode >= CHAR_CODE_UPPER_A:
-              if charCode <= CHAR_CODE_UPPER_Z:
+            else if charCode >= 'A':
+              if charCode <= 'Z':
                 programCounter = dest
-              else if charCode == CHAR_CODE_UNDERSCORE:
+              else if charCode == '_':
                 programCounter = dest
-              else if (charCode >= CHAR_CODE_LOWER_A and
-                         charCode <= CHAR_CODE_LOWER_Z):
+              else if (charCode >= 'a' and
+                         charCode <= 'z'):
                 programCounter = dest
           break
         case ADD_TO_REGISTER:
