@@ -198,7 +198,7 @@ class MiniExpCompiler:
   _pendingGoto /MiniExpLabel ::= ?
 
   constructor .pattern .caseSensitive:
-    for int i = 0; i < FIXED_REGISTERS; i++:
+    for i := 0; i < FIXED_REGISTERS; i++:
       registers.add i == NO_POSITION_REGISTER ? NO_POSITION : 0
 
   codes -> List:
@@ -273,7 +273,7 @@ class MiniExpCompiler:
         nonOctalsFound := false
         // The first 0-3 octal digits form an octal character escape, the rest
         // are literals.
-        for int octalDigit in b.index.codeUnits:
+        b.index.codeUnits.do: | octalDigit |
           if (not nonOctalsFound) and
               CHAR_CODE_0 <= octalDigit <= CHAR_CODE_7 and
               codeUnit * 8 < 0x100 and octalsFound < 3):
@@ -311,10 +311,10 @@ class MiniExpCompiler:
     _emit BACKTRACK
 
   push reg/int -> none:
-    _emit(PUSH_REGISTER, registerNumber reg)
+    _emit PUSH_REGISTER registerNumber reg
 
   pop reg/int -> none:
-    _emit(POP_REGISTER, registerNumber reg)
+    _emit POP_REGISTER registerNumber reg
 
   goto label/MiniExpLabel -> none:
     if _pendingGoto != label: flushPendingGoto
@@ -346,7 +346,7 @@ class MiniExpCompiler:
         registerNumber sourceRegister
 
   backtrackOnBackReferenceFail register/int caseSensitive/bool -> none:
-    _emit BACKTRACK_ON_BACK_REFERENCE,
+    _emit BACKTRACK_ON_BACK_REFERENCE
         registerNumber register
         caseSensitive ? 1 : 0
 
@@ -496,7 +496,7 @@ class MiniExpAnalysis:
     // on the stack.
     fixedLength = null
     anchored = bodyAnalysis.anchored
-    registersToSave = combineRegisters bodyAnalysis.registersToSave, [start, end]
+    registersToSave = combineRegisters bodyAnalysis.registersToSave [start, end]
 
 abstract class MiniExpAst:
   // When generating code for an AST, note that:
@@ -517,30 +517,29 @@ abstract class MiniExpAst:
   label ::= MiniExpLabel
 
 class Disjunction extends MiniExpAst:
-  final MiniExpAst _left
-  final MiniExpAst _right
+  _left/MiniExpAst ::= ?
+  _right/MiniExpAst ::= ?
 
-  Disjunction(MiniExpAst this._left, MiniExpAst this._right)
+  constructor ._left ._right:
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
-    MiniExpLabel tryRight = new MiniExpLabel
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
+    MiniExpLabel tryRight = MiniExpLabel
     compiler.pushBacktrack tryRight
-    compiler.generate(_left, onSuccess)
+    compiler.generate _left onSuccess
     compiler.bind tryRight
-    compiler.generate(_right, onSuccess)
+    compiler.generate _right onSuccess
 
-  MiniExpAnalysis analyze(MiniExpCompiler compiler):
-    return new MiniExpAnalysis.or(
-        _left.analyze compiler, _right.analyze compiler)
-}
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+    return MiniExpAnalysis.or
+        _left.analyze compiler
+        _right.analyze compiler
 
 class EmptyAlternative extends MiniExpAst:
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
     compiler.goto onSuccess
 
-  MiniExpAnalysis analyze(MiniExpCompiler compiler):
-    return const MiniExpAnalysis.empty
-}
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+    return MiniExpAnalysis.empty
 
 class Alternative extends MiniExpAst:
   final MiniExpAst _left
@@ -548,68 +547,70 @@ class Alternative extends MiniExpAst:
 
   constructor ._left ._right)
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
-    compiler.generate(_left, _right.label)
-    compiler.generate(_right, onSuccess)
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
+    compiler.generate _left _right.label
+    compiler.generate _right onSuccess
 
-  MiniExpAnalysis analyze(MiniExpCompiler compiler):
-    return new MiniExpAnalysis.and(
-        _left.analyze compiler, _right.analyze compiler)
-}
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+    return MiniExpAnalysis.and
+        _left.analyze compiler
+        _right.analyze compiler
 
 abstract class Assertion extends MiniExpAst:
-  MiniExpAnalysis analyze(MiniExpCompiler) => const MiniExpAnalysis.empty
-}
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+    return MiniExpAnalysis.empty
 
 class AtStart extends Assertion:
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
-    compiler.backtrackIfNotEqual(CURRENT_POSITION, ZERO_REGISTER)
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
+    compiler.backtrackIfNotEqual CURRENT_POSITION ZERO_REGISTER
     compiler.goto onSuccess
 
-  MiniExpAnalysis analyze(MiniExpCompiler) => const MiniExpAnalysis.atStart
-}
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+    return MiniExpAnalysis.atStart
 
 class AtEnd extends Assertion:
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
-    compiler.backtrackIfNotEqual(CURRENT_POSITION, STRING_LENGTH)
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
+    compiler.backtrackIfNotEqual CURRENT_POSITION STRING_LENGTH
     compiler.goto onSuccess
-}
 
 abstract class MultiLineAssertion extends Assertion:
-  backtrackIfNotNewline(MiniExpCompiler compiler) -> none:
-    compiler.backtrackIfInRange(
-        CHAR_CODE_CARRIAGE_RETURN + 1, CHAR_CODE_LINE_SEPARATOR - 1)
-    compiler.backtrackIfInRange(0, CHAR_CODE_NEWLINE - 1)
-    compiler.backtrackIfInRange(
-        CHAR_CODE_NEWLINE + 1, CHAR_CODE_CARRIAGE_RETURN - 1)
-    compiler.backtrackIfInRange(CHAR_CODE_PARAGRAPH_SEPARATOR + 1, 0xffff)
-}
+  backtrackIfNotNewline compiler/MiniExpCompiler -> none:
+    compiler.backtrackIfInRange
+        CHAR_CODE_CARRIAGE_RETURN + 1
+        CHAR_CODE_LINE_SEPARATOR - 1
+    compiler.backtrackIfInRange
+        0
+        CHAR_CODE_NEWLINE - 1
+    compiler.backtrackIfInRange 
+        CHAR_CODE_NEWLINE + 1
+        CHAR_CODE_CARRIAGE_RETURN - 1
+    compiler.backtrackIfInRange
+        CHAR_CODE_PARAGRAPH_SEPARATOR + 1
+        0xffff
 
 class AtBeginningOfLine extends MultiLineAssertion:
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
-    compiler.gotoIfGreaterEqual(ZERO_REGISTER, CURRENT_POSITION, onSuccess)
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
+    compiler.gotoIfGreaterEqual ZERO_REGISTER CURRENT_POSITION onSuccess
     // We need to look one back to see if there was a newline there.  If we
     // backtrack, then that also restores the current position, but if we don't
     // backtrack, we have to fix it again.
-    compiler.addToRegister(CURRENT_POSITION, -1)
+    compiler.addToRegister CURRENT_POSITION -1
     backtrackIfNotNewline compiler
-    compiler.addToRegister(CURRENT_POSITION, 1)
+    compiler.addToRegister CURRENT_POSITION 1
     compiler.goto onSuccess
-}
 
 class AtEndOfLine extends MultiLineAssertion:
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
-    compiler.gotoIfGreaterEqual(CURRENT_POSITION, STRING_LENGTH, onSuccess)
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
+    compiler.gotoIfGreaterEqual CURRENT_POSITION STRING_LENGTH onSuccess
     backtrackIfNotNewline compiler
     compiler.goto onSuccess
-}
 
 class WordBoundary extends Assertion:
   _positive /bool ::= ?
 
   constructor ._positive)
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
     // Positive word boundaries are much more common that negative ones, so we
     // will allow ourselves to generate some pretty horrible code for the
     // negative ones.
@@ -624,7 +625,6 @@ class WordBoundary extends Assertion:
       compiler.pop CURRENT_POSITION
       // This overwrites the current position with the correct value.
       compiler.backtrack
-}
 
 class LookAhead extends Assertion:
   _positive /bool ::= ?
@@ -634,11 +634,11 @@ class LookAhead extends Assertion:
   int _savedStackPointerRegister
   int _savedPosition
 
-  constructor ._positive ._body, MiniExpCompiler compiler:
+  constructor ._positive ._body compiler/MiniExpCompiler:
     _savedStackPointerRegister = compiler.allocateWorkingRegister
     _savedPosition = compiler.allocateWorkingRegister
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
     // Lookahead.  Even if the subexpression succeeds, the current position is
     // reset, and the backtracking stack is unwound so that we can never
     // backtrack into the lookahead.  On a failure of the subexpression, the
@@ -646,22 +646,22 @@ class LookAhead extends Assertion:
     MiniExpLabel body_succeeded = new MiniExpLabel
     MiniExpLabel succeed_on_failure = new MiniExpLabel
     MiniExpLabel undoCaptures
-    compiler.copyRegister(_savedStackPointerRegister, STACK_POINTER)
-    compiler.copyRegister(_savedPosition, CURRENT_POSITION)
+    compiler.copyRegister _savedStackPointerRegister STACK_POINTER
+    compiler.copyRegister _savedPosition CURRENT_POSITION
     if not _positive:
       compiler.pushBacktrack succeed_on_failure
-    compiler.generate(_body, body_succeeded)
+    compiler.generate _body body_succeeded
 
     compiler.bind body_succeeded
-    compiler.copyRegister(STACK_POINTER, _savedStackPointerRegister)
-    compiler.copyRegister(CURRENT_POSITION, _savedPosition)
+    compiler.copyRegister STACK_POINTER _savedStackPointerRegister
+    compiler.copyRegister CURRENT_POSITION _savedPosition
     if not _positive:
       // For negative lookahead always zap the captures when the body succeeds
       // and the lookahead thus fails.  The captures are only needed for any
       // backrefs inside the negative lookahead.
       if _subtreeRegisters != null:
-        for int register in _subtreeRegisters:
-          compiler.copyRegister(register, NO_POSITION_REGISTER)
+        _subtreeRegisters.do: | register |
+          compiler.copyRegister register NO_POSITION_REGISTER
       compiler.backtrack
       compiler.bind succeed_on_failure
     else:
@@ -677,15 +677,14 @@ class LookAhead extends Assertion:
 
     if undoCaptures != null:
       compiler.bind undoCaptures
-      for int register in _subtreeRegisters:
-        compiler.copyRegister(register, NO_POSITION_REGISTER)
+      _subtreeRegisters.do: | register |
+        compiler.copyRegister register NO_POSITION_REGISTER)
       compiler.backtrack
 
-  MiniExpAnalysis analyze(compiler):
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
     MiniExpAnalysis bodyAnalysis = _body.analyze compiler
     _subtreeRegisters = bodyAnalysis.registersToSave
-    return new MiniExpAnalysis.lookahead(bodyAnalysis, _positive)
-}
+    return MiniExpAnalysis.lookahead bodyAnalysis _positive
 
 class Quantifier extends MiniExpAst:
   _min /int ::= ?
@@ -703,11 +702,12 @@ class Quantifier extends MiniExpAst:
 
   bool get _isOptimizedGreedy => _optimizedGreedyRegister != null
 
-  constructor ._min,
-             this._max,
-             this._greedy,
-             this._body,
-             MiniExpCompiler compiler):
+  constructor
+      ._min
+      ._max
+      ._greedy
+      ._body
+      compiler/MiniExpCompiler:
     if _counterCheck:
       _counterRegister = compiler.allocateWorkingRegister
       _minRegister = compiler.allocateConstantRegister _min
@@ -716,53 +716,54 @@ class Quantifier extends MiniExpAst:
   // We fall through to the top of this, when it is time to match the body of
   // the quantifier.  If the body matches successfully, we should go to
   // onBodySuccess, otherwise clean up and backtrack.
-  void generateCommon(
-      MiniExpCompiler compiler, MiniExpLabel onBodySuccess):
+  void generateCommon(compiler/MiniExpCompiler onBodySuccess/MiniExpLabel:
     bool needToCatchDidntMatch = _greedy or _bodyCanMatchEmpty or
         _counterCheck or _saveAndRestoreRegisters
-    MiniExpLabel didntMatch = new MiniExpLabel
+    MiniExpLabel didntMatch = MiniExpLabel
 
     if _saveAndRestoreRegisters:
-      for int reg in _subtreeRegistersThatNeedSaving:
+      _subtreeRegistersThatNeedSaving.do: | reg |
         compiler.push reg
-        compiler.copyRegister(reg, NO_POSITION_REGISTER)
+        compiler.copyRegister reg NO_POSITION_REGISTER
 
     if _bodyCanMatchEmpty:
       compiler.push _startOfMatchRegister
-      compiler.copyRegister(_startOfMatchRegister, CURRENT_POSITION)
+      compiler.copyRegister _startOfMatchRegister CURRENT_POSITION
 
     if needToCatchDidntMatch:
       compiler.pushBacktrack didntMatch
 
     if _counterCheck:
-      compiler.addToRegister(_counterRegister, 1)
+      compiler.addToRegister _counterRegister 1
       if _maxCheck:
-        compiler.backtrackIfGreater(_counterRegister, _maxRegister)
+        compiler.backtrackIfGreater _counterRegister _maxRegister
 
-    compiler.generate(_body, onBodySuccess)
+    compiler.generate _body onBodySuccess
 
     if needToCatchDidntMatch:
       compiler.bind didntMatch
       if _bodyCanMatchEmpty:
         compiler.pop _startOfMatchRegister
       if _counterCheck:
-        compiler.addToRegister(_counterRegister, -1)
+        compiler.addToRegister _counterRegister -1
       if _saveAndRestoreRegisters:
-        for int i = _subtreeRegistersThatNeedSaving.size - 1; i >= 0; --i:
-          compiler.pop(_subtreeRegistersThatNeedSaving[i])
+        for i := _subtreeRegistersThatNeedSaving.size - 1; i >= 0; --i:
+          compiler.pop _subtreeRegistersThatNeedSaving[i]
       if not _greedy: compiler.backtrack
 
   void generateFixedLengthGreedy(
-      MiniExpCompiler compiler, MiniExpLabel onSuccess):
+      MiniExpCompiler compiler onSuccess/MiniExpLabel:
     MiniExpLabel newIteration = new MiniExpLabel
     MiniExpLabel cantAdvanceMore = new MiniExpLabel
     MiniExpLabel continuationFailed = new MiniExpLabel
 
     // Save the current position, so we know when the quantifier has been
     // unwound enough.
-    compiler.copyRegister(_optimizedGreedyRegister, CURRENT_POSITION)
+    compiler.copyRegister _optimizedGreedyRegister CURRENT_POSITION
     if _min != 0:
-      compiler.addToRegister(_optimizedGreedyRegister, _min * _bodyLength)
+      compiler.addToRegister
+          _optimizedGreedyRegister
+          _min * _bodyLength
 
     // This backtrack doesn't trigger until the quantifier has eaten as much as
     // possible.  Unfortunately, whenever we backtrack in this simple system,
@@ -776,40 +777,38 @@ class Quantifier extends MiniExpAst:
 
     // The loop.
     compiler.bind newIteration
-    compiler.copyRegister(_savePositionRegister, CURRENT_POSITION)
-    compiler.generate(_body, newIteration)
+    compiler.copyRegister _savePositionRegister CURRENT_POSITION
+    compiler.generate _body newIteration
 
     // The greedy quantifier has eaten as much as it can.  Time to try the
     // continuation of the regexp after the quantifier.
     compiler.bind cantAdvanceMore
 
     if _min != 0:
-      compiler.backtrackIfGreater(
-          _optimizedGreedyRegister, _savePositionRegister)
+      compiler.backtrackIfGreater _optimizedGreedyRegister _savePositionRegister
 
-    compiler.addToRegister(_savePositionRegister, _bodyLength)
-    compiler.copyRegister(CURRENT_POSITION, _savePositionRegister)
+    compiler.addToRegister _savePositionRegister _bodyLength
+    compiler.copyRegister CURRENT_POSITION _savePositionRegister
 
     // The continuation of the regexp failed.  We backtrack the greedy
     // quantifier by one step and retry.
     compiler.bind continuationFailed
-    compiler.addToRegister(CURRENT_POSITION, -_bodyLength)
+    compiler.addToRegister CURRENT_POSITION -_bodyLength
     // If we got back to where the quantifier started matching, then jump
     // to the continuation (we haven't pushed a backtrack, so if that fails, it
     // will backtrack further).
     // We don't have gotoIfEqual, so use gotoIfGreaterEqual.
-    compiler.gotoIfGreaterEqual(
-        _optimizedGreedyRegister, CURRENT_POSITION, onSuccess)
+    compiler.gotoIfGreaterEqual _optimizedGreedyRegister CURRENT_POSITION onSuccess
     compiler.pushBacktrack continuationFailed
     compiler.goto onSuccess
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
     // We optimize loops of the form .* to avoid big backtrack stacks.
     if _isOptimizedGreedy:
-      generateFixedLengthGreedy(compiler, onSuccess)
+      generateFixedLengthGreedy compiler onSuccess
       return
     if _min == 1 and _max == 1:
-      compiler.generate(_body, onSuccess)
+      compiler.generate _body onSuccess
       return
     // The above means if _max is 1 then _min must be 0, which simplifies
     // things.
@@ -820,16 +819,16 @@ class Quantifier extends MiniExpAst:
       checkEmptyMatchLabel = new MiniExpLabel
       onBodySuccess = checkEmptyMatchLabel
     if _counterCheck:
-      compiler.copyRegister(_counterRegister, ZERO_REGISTER)
+      compiler.copyRegister _counterRegister ZERO_REGISTER
 
     if bodyMatched != onSuccess:
       compiler.bind bodyMatched
 
     if _greedy:
-      generateCommon(compiler, onBodySuccess)
+      generateCommon compiler onBodySuccess
 
       if _minCheck:
-        compiler.gotoIfGreaterEqual(_counterRegister, _minRegister, onSuccess)
+        compiler.gotoIfGreaterEqual _counterRegister _minRegister onSuccess
         compiler.backtrack
       else:
         compiler.goto onSuccess
@@ -843,8 +842,7 @@ class Quantifier extends MiniExpAst:
         // TODO(erikcorry): if we had a gotoIfLess we could save instructions
         // here.
         MiniExpLabel jumpToContinuation = new MiniExpLabel
-        compiler.gotoIfGreaterEqual(
-            _counterRegister, _minRegister, jumpToContinuation)
+        compiler.gotoIfGreaterEqual _counterRegister _minRegister jumpToContinuation
         compiler.goto tryBody
         compiler.bind jumpToContinuation
       // If the continuation fails, we can try the _body once more.
@@ -854,17 +852,16 @@ class Quantifier extends MiniExpAst:
       // We failed to match the continuation, so lets match the _body once more
       // and then try again.
       compiler.bind tryBody
-      generateCommon(compiler, onBodySuccess)
+      generateCommon compiler onBodySuccess
 
     if _bodyCanMatchEmpty:
       compiler.bind checkEmptyMatchLabel
       if _minCheck:
-        compiler.gotoIfGreaterEqual(
-            _minRegister, _counterRegister, bodyMatched)
-      compiler.backtrackIfEqual(_startOfMatchRegister, CURRENT_POSITION)
+        compiler.gotoIfGreaterEqual _minRegister _counterRegister bodyMatched
+      compiler.backtrackIfEqual _startOfMatchRegister CURRENT_POSITION
       compiler.goto bodyMatched
 
-  MiniExpAnalysis analyze(compiler):
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
     MiniExpAnalysis bodyAnalysis = _body.analyze compiler
     _subtreeRegistersThatNeedSaving = bodyAnalysis.registersToSave
     _bodyLength = bodyAnalysis.fixedLength
@@ -875,10 +872,9 @@ class Quantifier extends MiniExpAst:
       // this AST.
       _optimizedGreedyRegister = compiler.allocateWorkingRegister
       _savePositionRegister = compiler.allocateWorkingRegister
-    List<int> myRegs = [
-        _counterRegister, _optimizedGreedyRegister, _savePositionRegister]
+    List<int> myRegs = [_counterRegister, _optimizedGreedyRegister, _savePositionRegister]
             .where((x) => x != null).toList(growable: false)
-    return new MiniExpAnalysis.quantifier(bodyAnalysis, _min, _max, myRegs)
+    return MiniExpAnalysis.quantifier bodyAnalysis _min _max myRegs
 
   bool get _maxCheck => _max != 1 and _max != null
 
@@ -891,31 +887,30 @@ class Quantifier extends MiniExpAst:
   bool get _saveAndRestoreRegisters:
     return _subtreeRegistersThatNeedSaving != null and
            _subtreeRegistersThatNeedSaving.isNotEmpty
-}
 
 class Atom extends MiniExpAst:
   _constantIndex /int ::= ?
 
   constructor ._constantIndex)
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
-    compiler.backtrackIfEqual(CURRENT_POSITION, STRING_LENGTH)
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
+    compiler.backtrackIfEqual CURRENT_POSITION STRING_LENGTH
     MiniExpLabel match
     int charCode = compiler.constantPoolEntry _constantIndex
     if not compiler.caseSensitive:
       List<int> equivalents = internalRegExpEquivalenceClass charCode
       if equivalents != null and equivalents.size > 1:
         match = new MiniExpLabel
-        for int equivalent in equivalents:
+        equivalents.do: | equivalent |
           if equivalent == charCode: continue
-          compiler.gotoIfMatches(equivalent, match)
+          compiler.gotoIfMatches equivalent match
     compiler.backtrackIfNoMatch _constantIndex
     if match != null: compiler.bind match
-    compiler.addToRegister(CURRENT_POSITION, 1)
+    compiler.addToRegister CURRENT_POSITION 1
     compiler.goto onSuccess
 
-  MiniExpAnalysis analyze(compiler) => const MiniExpAnalysis.atom
-}
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+    return MiniExpAnalysis.atom
 
 class CharClass extends MiniExpAst:
   _ranges /List ::= []
@@ -924,7 +919,7 @@ class CharClass extends MiniExpAst:
   constructor ._positive)
 
   // Here and elsewhere, "to" is inclusive.
-  add(int from, int to) -> none:
+  add from/int to/int -> none:
     _ranges.add from
     _ranges.add to
 
@@ -943,46 +938,54 @@ class CharClass extends MiniExpAst:
     0x10000]
 
   addSpaces -> none:
-    for int i = 1; i < _spaceCodes.size - 1; i += 2:
-      add(_spaceCodes[i], _spaceCodes[i + 1])
+    for i := 1; i < _spaceCodes.size - 1; i += 2:
+      add _spaceCodes[i] _spaceCodes[i + 1]
 
   addNotSpaces -> none:
-    for int i = 0; i < _spaceCodes.size; i += 2:
-      add(_spaceCodes[i] + 1, _spaceCodes[i + 1] - 1)
+    for i := 0; i < _spaceCodes.size; i += 2:
+      add _spaceCodes[i] + 1
+          _spaceCodes[i + 1] - 1
 
-  addSpecial(charCode) -> none:
+  addSpecial charCode/int -> none:
     if charCode == CHAR_CODE_LOWER_D:
-      add(CHAR_CODE_0, CHAR_CODE_9)
+      add CHAR_CODE_0 CHAR_CODE_9
     else if charCode == CHAR_CODE_UPPER_D:
-      add(0, CHAR_CODE_0 - 1)
-      add(CHAR_CODE_9 + 1, 0xffff)
+      add 0
+          CHAR_CODE_0 - 1
+      add CHAR_CODE_9 + 1
+          0xffff
     else if charCode == CHAR_CODE_LOWER_S:
       addSpaces
     else if charCode == CHAR_CODE_UPPER_S:
       addNotSpaces
     else if charCode == CHAR_CODE_LOWER_W:
-      add(CHAR_CODE_0, CHAR_CODE_9)
-      add(CHAR_CODE_UPPER_A, CHAR_CODE_UPPER_Z)
-      add(CHAR_CODE_UNDERSCORE, CHAR_CODE_UNDERSCORE)
-      add(CHAR_CODE_LOWER_A, CHAR_CODE_LOWER_Z)
+      add CHAR_CODE_0 CHAR_CODE_9
+      add CHAR_CODE_UPPER_A CHAR_CODE_UPPER_Z
+      add CHAR_CODE_UNDERSCORE CHAR_CODE_UNDERSCORE
+      add CHAR_CODE_LOWER_A CHAR_CODE_LOWER_Z
     else if charCode == CHAR_CODE_UPPER_W:
-      add(0, CHAR_CODE_0 - 1 )
-      add(CHAR_CODE_9 + 1, CHAR_CODE_UPPER_A - 1)
-      add(CHAR_CODE_UPPER_Z + 1, CHAR_CODE_UNDERSCORE - 1)
-      add(CHAR_CODE_UNDERSCORE + 1, CHAR_CODE_LOWER_A - 1)
-      add(CHAR_CODE_LOWER_Z + 1, 0xffff)
+      add 0
+          CHAR_CODE_0 - 1 
+      add CHAR_CODE_9 + 1
+          CHAR_CODE_UPPER_A - 1
+      add CHAR_CODE_UPPER_Z + 1
+          CHAR_CODE_UNDERSCORE - 1
+      add CHAR_CODE_UNDERSCORE + 1
+          CHAR_CODE_LOWER_A - 1
+      add CHAR_CODE_LOWER_Z + 1
+          0xffff
 
   List<int> caseInsensitiveRanges(List<int> oldRanges):
     List<int> ranges = new List<int>
-    for int i = 0; i < oldRanges.size; i += 2:
+    for i := 0; i < oldRanges.size; i += 2:
       int start = oldRanges[i]
       int end = oldRanges[i + 1]
       int previousStart = -1
       int previousEnd = -1
-      for int j = start; j <= end; j++:
+      for j := start; j <= end; j++:
         List<int> equivalents = internalRegExpEquivalenceClass j
         if equivalents != null and equivalents.size > 1:
-          for int equivalent in equivalents:
+          equivalents.do: | equivalent |
             if ((equivalent < start or equivalent > end) and
                 (equivalent < previousStart or equivalent > previousEnd)):
               if equivalent == previousEnd + 1:
@@ -997,25 +1000,25 @@ class CharClass extends MiniExpAst:
     // TODO(erikcorry): Sort and merge ranges.
     return ranges
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
-    compiler.backtrackIfEqual(CURRENT_POSITION, STRING_LENGTH)
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
+    compiler.backtrackIfEqual CURRENT_POSITION STRING_LENGTH
     List<int> ranges = _ranges
     if not compiler.caseSensitive:
       ranges = caseInsensitiveRanges _ranges
     MiniExpLabel match = new MiniExpLabel
     if _positive:
-      for int i = 0; i < ranges.size; i += 2:
-        compiler.gotoIfInRange(ranges[i], ranges[i + 1], match)
+      for i := 0; i < ranges.size; i += 2:
+        compiler.gotoIfInRange ranges[i] ranges[i + 1] match
       compiler.backtrack
       compiler.bind match
     else:
-      for int i = 0; i < ranges.size; i += 2:
-        compiler.backtrackIfInRange(ranges[i], ranges[i + 1])
-    compiler.addToRegister(CURRENT_POSITION, 1)
+      for i := 0; i < ranges.size; i += 2:
+        compiler.backtrackIfInRange ranges[i] ranges[i + 1]
+    compiler.addToRegister CURRENT_POSITION 1
     compiler.goto onSuccess
 
-  MiniExpAnalysis analyze(compiler) => const MiniExpAnalysis.atom
-}
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+    return MiniExpAnalysis.atom
 
 // This class is used for all backslashes followed by numbers.  For web
 // compatibility, if the number (interpreted as decimal) is smaller than the
@@ -1036,17 +1039,16 @@ class BackReference extends MiniExpAst:
   replaceWithAst(MiniExpAst ast) -> none:
     _astThatReplacesUs = ast
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
     if _register == null:
-      compiler.generate(_astThatReplacesUs, onSuccess)
+      compiler.generate _astThatReplacesUs onSuccess
     else:
-      compiler.backtrackOnBackReferenceFail(_register, compiler.caseSensitive)
+      compiler.backtrackOnBackReferenceFail _register compiler.caseSensitive
       compiler.goto onSuccess
 
-  MiniExpAnalysis analyze(compiler):
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
     compiler.addBackReference this
-    return const MiniExpAnalysis.knowNothing
-}
+    return MiniExpAnalysis.knowNothing
 
 class Capture extends MiniExpAst:
   _captureCount /int ::= ?
@@ -1054,41 +1056,39 @@ class Capture extends MiniExpAst:
   int _startRegister
   int _endRegister
 
-  constructor ._captureCount, MiniExpAst this._body)
+  constructor ._captureCount ._body:
 
-  allocateRegisters(MiniExpCompiler compiler) -> none:
+  allocateRegisters compiler/MiniExpCompiler -> none:
     if _startRegister == null:
       _startRegister = compiler.allocateCaptureRegisters
       _endRegister = _startRegister - 1
 
-  generate(MiniExpCompiler compiler, MiniExpLabel onSuccess) -> none:
+  generate compiler/MiniExpCompiler onSuccess/MiniExpLabel -> none:
     MiniExpLabel undoStart = new MiniExpLabel
     MiniExpLabel writeEnd = new MiniExpLabel
     MiniExpLabel undoEnd = new MiniExpLabel
-    compiler.copyRegister(_startRegister, CURRENT_POSITION)
+    compiler.copyRegister _startRegister CURRENT_POSITION
     compiler.pushBacktrack undoStart
 
-    compiler.generate(_body, writeEnd)
+    compiler.generate _body writeEnd
 
     compiler.bind writeEnd
-    compiler.copyRegister(_endRegister, CURRENT_POSITION)
+    compiler.copyRegister _endRegister CURRENT_POSITION
     compiler.pushBacktrack undoEnd
     compiler.goto onSuccess
 
     compiler.bind undoStart
-    compiler.copyRegister(_startRegister, NO_POSITION_REGISTER)
+    compiler.copyRegister _startRegister NO_POSITION_REGISTER
     compiler.backtrack
 
     compiler.bind undoEnd
-    compiler.copyRegister(_endRegister, NO_POSITION_REGISTER)
+    compiler.copyRegister _endRegister NO_POSITION_REGISTER
     compiler.backtrack
 
-  MiniExpAnalysis analyze(MiniExpCompiler compiler):
+  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
     allocateRegisters compiler
     MiniExpAnalysis bodyAnalysis = _body.analyze compiler
-    return new MiniExpAnalysis.capture(
-        bodyAnalysis, _startRegister, _endRegister)
-}
+    return MiniExpAnalysis.capture bodyAnalysis _startRegister _endRegister
 
 class MiniExpMatch implements Match:
   final Pattern pattern
@@ -1107,7 +1107,7 @@ class MiniExpMatch implements Match:
 
   group(index) -> string:
     if index > groupCount:
-      throw new RangeError("Invalid regexp group number")
+      throw new RangeError "Invalid regexp group number"
     index *= 2
     index += _firstCaptureReg
     if _registers[index] == NO_POSITION: return null
@@ -1115,12 +1115,11 @@ class MiniExpMatch implements Match:
 
   List<String> groups(List<int> groupIndices):
     List<String> answer = new List<String>
-    for int i in groupIndices:
+    groupIndices.do: | i |
       answer.add(group i)
     return answer
 
   String operator[](index) => group index
-}
 
 class AllMatchesIterator implements Iterator<Match>:
   int _position
@@ -1141,7 +1140,6 @@ class AllMatchesIterator implements Iterator<Match>:
     return true
 
   MiniExpMatch get current => _current
-}
 
 class AllMatchesIterable extends Iterable<Match>:
   _position /int ::= ?
@@ -1152,7 +1150,6 @@ class AllMatchesIterable extends Iterable<Match>:
 
   AllMatchesIterator get iterator:
     return new AllMatchesIterator(_regexp, _subject, _position)
-}
 
 class _MiniExp implements RegExp:
   List<int> _byteCodes
@@ -1164,22 +1161,24 @@ class _MiniExp implements RegExp:
   isMultiLine /bool ::= ?
   isCaseSensitive /bool ::= ?
 
-  _MiniExp(this.pattern .isMultiLine .isCaseSensitive):
-    if pattern is! String: throw new ArgumentError
-    var compiler = new MiniExpCompiler(pattern, isCaseSensitive)
-    var parser = new MiniExpParser(compiler, pattern, isMultiLine)
+  constructor .pattern .isMultiLine .isCaseSensitive:
+    if not pattern is String: throw new ArgumentError
+    var compiler = new MiniExpCompiler pattern isCaseSensitive
+    var parser = new MiniExpParser compiler pattern isMultiLine
     MiniExpAst ast = parser.parse
-    _generateCode(compiler, ast, pattern)
+    _generateCode compiler ast pattern
 
-  Match matchAsPrefix(String a, [int a1 = 0]):
-    return _match(a, a1, _stickyEntryPoint)
+  matchAsPrefix a/string a1/int=0 -> Match:
+    return _match a a1 _stickyEntryPoint
 
-  Match firstMatching a/string => _match(a, 0, 0)
+  firstMatching a/string -> Match:
+    return _match a 0 0
 
-  bool hasMatching a/string => _match(a, 0, 0) != null
+  hasMatching a/string -> bool:
+    return (_match a 0 0) != null
 
   stringMatching a/string -> string:
-    Match m = _match(a, 0, 0)
+    Match m = _match a 0 0
     if m == null: return null
     return m[0]
 
@@ -1187,93 +1186,90 @@ class _MiniExp implements RegExp:
     if a is! String: throw new ArgumentError
     if start < 0 or start > a.size:
       throw new RangeError("Start index out of range")
-    return new AllMatchesIterable(this, a, start)
+    return new AllMatchesIterable this a start
 
-  Match _match(String a, int startPosition, int startProgramCounter):
-    if a is! String: throw new ArgumentError
+  _match a/string startPosition/int startProgramCounter/int -> Match:
+    if not a is String: throw new ArgumentError
     List<int> registers =
         new List<int>.from(_initialRegisterValues, growable: false)
     var interpreter =
-        new MiniExpInterpreter(_byteCodes, _constantPool, registers)
-    if not interpreter.interpret(a, startPosition, startProgramCounter):
+        new MiniExpInterpreter _byteCodes _constantPool registers
+    if not interpreter.interpret a startPosition startProgramCounter:
       return null
-    return new MiniExpMatch(this, a, registers, _firstCaptureRegister)
+    return new MiniExpMatch this a registers _firstCaptureRegister
 
-  _generateCode(MiniExpCompiler compiler, MiniExpAst ast, String source) -> none:
+  _generateCode compiler/MiniExpCompiler MiniExpAst ast, String source) -> none:
     // Top level capture regs.
-    int topLevelCaptureReg = compiler.allocateCaptureRegisters
+    topLevelCaptureReg/int = compiler.allocateCaptureRegisters
 
-    MiniExpAnalysis topAnalysis = ast.analyze compiler
+    topAnalysis/MiniExpAnalysis = ast.analyze compiler
 
     compiler.addCaptureRegisters
 
-    var stickyEntryPoint = new MiniExpLabel
-    var stickyStart = new MiniExpLabel
-    var failSticky = new MiniExpLabel
+    stickyEntryPoint := MiniExpLabel
+    stickyStart := MiniExpLabel
+    failSticky := MiniExpLabel
 
-    var start = new MiniExpLabel
+    start := MiniExpLabel
     compiler.bind start
 
-    var fail = new MiniExpLabel
+    fail := MiniExpLabel
     compiler.pushBacktrack fail
 
     compiler.bind stickyStart
-    compiler.copyRegister(topLevelCaptureReg, CURRENT_POSITION)
+    compiler.copyRegister topLevelCaptureReg CURRENT_POSITION
 
-    var succeed = new MiniExpLabel
-    compiler.generate(ast, succeed)
+    succeed := MiniExpLabel
+    compiler.generate ast succeed
 
     compiler.bind fail
     if not topAnalysis.anchored:
-      var end = new MiniExpLabel
-      compiler.gotoIfGreaterEqual(CURRENT_POSITION, STRING_LENGTH, end)
-      compiler.addToRegister(CURRENT_POSITION, 1)
+      end := MiniExpLabel
+      compiler.gotoIfGreaterEqual CURRENT_POSITION STRING_LENGTH end
+      compiler.addToRegister CURRENT_POSITION 1
       compiler.goto start
       compiler.bind end
     compiler.bind failSticky
     compiler.fail
 
     compiler.bind succeed
-    compiler.copyRegister(topLevelCaptureReg - 1, CURRENT_POSITION)
+    compiler.copyRegister topLevelCaptureReg - 1 CURRENT_POSITION
     compiler.succeed
 
     compiler.bind stickyEntryPoint
     compiler.pushBacktrack failSticky
     compiler.goto stickyStart
 
-    _byteCodes = compiler.codes
+    OTHER = compiler.codes
     _constantPool = compiler.constantPool
     _initialRegisterValues = compiler.registers
     _firstCaptureRegister = compiler.firstCaptureRegister
     _stickyEntryPoint = stickyEntryPoint.location
-}
 
 // Lexer tokens.
-enum Token:
-  none,
-  quant,
-  backslash,
-  dot,
-  lParen,
-  rParen,
-  lSquare,
-  hat,
-  dollar,
-  pipe,
-  backReference,
-  wordBoundary,
-  notWordBoundary,
-  wordCharacter,
-  notWordCharacter,
-  digit,
-  notDigit,
-  whitespace,
-  notWhitespace,
-  nonCapturing,
-  lookAhead,
-  negativeLookAhead,
-  other
-}
+NONE ::= 0
+QUANT ::= 1
+BACKSLASH ::= 2
+DOT ::= 3
+L_PAREN ::= 4
+R_PAREN ::= 5
+L_SQUARE ::= 6
+HAT ::= 7
+DOLLAR ::= 8
+PIPE ::= 9
+BACK_REFERENCE ::= 10
+WORD_BOUNDARY ::= 11
+NOT_WORD_BOUNDARY ::= 12
+WORD_CHARACTER ::= 13
+NOT_WORD_CHARACTER ::= 14
+DIGIT ::= 15
+NOT_DIGIT ::= 16
+WHITESPACE ::= 17
+NOT_WHITESPACE ::= 18
+NON_CAPTURING ::= 19
+LOOK_AHEAD ::= 20
+NEGATIVE_LOOK_AHEAD ::= 21
+OTHER ::= 22
 
 class MiniExpParser:
   // The constant pool is used to look up character data when the regexp is
@@ -1303,7 +1299,7 @@ class MiniExpParser:
   MiniExpAst parse:
     getToken
     MiniExpAst ast = parseDisjunction
-    expectToken Token.none
+    expectToken NONE
     return ast
 
   int _at(int _position) => _source[_position]
@@ -1316,43 +1312,43 @@ class MiniExpParser:
 
   MiniExpAst parseDisjunction:
     MiniExpAst ast = parseAlternative
-    while acceptToken[Token.pipe]:
-      ast = new Disjunction(ast, parseAlternative)
+    while acceptToken[PIPE]:
+      ast = new Disjunction ast parseAlternative
     return ast
 
   bool endOfAlternative:
-    return _lastToken == Token.pipe or _lastToken == Token.rParen or
-        _lastToken == Token.none
+    return _lastToken == PIPE or _lastToken == R_PAREN or
+        _lastToken == NONE
 
   MiniExpAst parseAlternative:
     if endOfAlternative:
       return new EmptyAlternative
     MiniExpAst ast = parseTerm
     while not endOfAlternative:
-      ast = new Alternative(ast, parseTerm)
+      ast = new Alternative ast parseTerm
     return ast
 
   MiniExpAst tryParseAssertion:
-    if acceptToken Token.hat:
+    if acceptToken HAT:
       return _isMultiLine ? new AtBeginningOfLine : new AtStart
-    if acceptToken Token.dollar:
+    if acceptToken DOLLAR:
       return _isMultiLine ? new AtEndOfLine : new AtEnd
-    if (acceptToken Token.wordBoundary) return new WordBoundary true
-    if (acceptToken Token.notWordBoundary) return new WordBoundary false
+    if  acceptToken WORD_BOUNDARY return new WordBoundary true
+    if (acceptToken NOT_WORD_BOUNDARY) return new WordBoundary false
     var lookaheadAst
-    if acceptToken Token.lookAhead:
-      lookaheadAst = new LookAhead(true, parseDisjunction, _compiler)
-    else if acceptToken Token.negativeLookAhead:
-      lookaheadAst = new LookAhead(false, parseDisjunction, _compiler)
+    if acceptToken LOOK_AHEAD:
+      lookaheadAst = new LookAhead true parseDisjunction _compiler
+    else if acceptToken NEGATIVE_LOOK_AHEAD:
+      lookaheadAst = new LookAhead false parseDisjunction _compiler
     if lookaheadAst != null:
-      expectToken Token.rParen
+      expectToken R_PAREN
       // The normal syntax does not allow a quantifier here, but the web
       // compatible one does.  Slightly nasty hack for compatibility:
-      if peekToken Token.quant:
+      if peekToken QUANT:
         MiniExpAst quant = new Quantifier(
             _minimumRepeats, _maximumRepeats, _lastWasGreedy,
             lookaheadAst, _compiler)
-        expectToken Token.quant
+        expectToken QUANT
         return quant
       return lookaheadAst
     return null
@@ -1361,70 +1357,70 @@ class MiniExpParser:
     MiniExpAst ast = tryParseAssertion
     if ast == null:
       ast = parseAtom
-      if peekToken Token.quant:
+      if peekToken QUANT:
         MiniExpAst quant = new Quantifier(
             _minimumRepeats, _maximumRepeats, _lastWasGreedy, ast, _compiler)
-        expectToken Token.quant
+        expectToken QUANT
         return quant
     return ast
 
   MiniExpAst parseAtom:
-    if peekToken Token.other:
+    if peekToken OTHER:
       MiniExpAst result = new Atom _lastTokenIndex
-      expectToken Token.other
+      expectToken OTHER
       return result
-    if acceptToken Token.dot:
+    if acceptToken DOT:
       CharClass ast = new CharClass false  // Negative char class.
-      ast.add(CHAR_CODE_NEWLINE, CHAR_CODE_NEWLINE)
-      ast.add(CHAR_CODE_CARRIAGE_RETURN, CHAR_CODE_CARRIAGE_RETURN)
-      ast.add(CHAR_CODE_LINE_SEPARATOR, CHAR_CODE_PARAGRAPH_SEPARATOR)
+      ast.add CHAR_CODE_NEWLINE CHAR_CODE_NEWLINE
+      ast.add CHAR_CODE_CARRIAGE_RETURN CHAR_CODE_CARRIAGE_RETURN
+      ast.add CHAR_CODE_LINE_SEPARATOR CHAR_CODE_PARAGRAPH_SEPARATOR
       return ast
 
-    if peekToken Token.backReference:
+    if peekToken BACK_REFERENCE:
       MiniExpAst backRef = new BackReference _lastBackReferenceIndex
-      expectToken Token.backReference
+      expectToken BACK_REFERENCE
       return backRef
 
-    if acceptToken Token.lParen:
+    if acceptToken L_PAREN:
       MiniExpAst ast = parseDisjunction
-      ast = new Capture(_captureCount++, ast)
-      expectToken Token.rParen
+      ast = new Capture _captureCount++ ast
+      expectToken R_PAREN
       return ast
-    if acceptToken Token.nonCapturing:
+    if acceptToken NON_CAPTURING:
       MiniExpAst ast = parseDisjunction
-      expectToken Token.rParen
+      expectToken R_PAREN
       return ast
 
     CharClass charClass
     bool digitCharClass = false
-    if acceptToken Token.wordCharacter:
+    if acceptToken WORD_CHARACTER:
       charClass = new CharClass true
-    else if acceptToken Token.notWordCharacter:
+    else if acceptToken NOT_WORD_CHARACTER:
       charClass = new CharClass false
-    else if acceptToken Token.digit:
+    else if acceptToken DIGIT:
       charClass = new CharClass true
       digitCharClass = true
-    else if acceptToken Token.notDigit:
+    else if acceptToken NOT_DIGIT:
       charClass = new CharClass false
       digitCharClass = true
     if charClass != null:
-      charClass.add(CHAR_CODE_0, CHAR_CODE_9)
+      charClass.add CHAR_CODE_0 CHAR_CODE_9
       if not digitCharClass:
-        charClass.add(CHAR_CODE_UPPER_A, CHAR_CODE_UPPER_Z)
-        charClass.add(CHAR_CODE_UNDERSCORE, CHAR_CODE_UNDERSCORE)
-        charClass.add(CHAR_CODE_LOWER_A, CHAR_CODE_LOWER_Z)
+        charClass.add CHAR_CODE_UPPER_A CHAR_CODE_UPPER_Z
+        charClass.add CHAR_CODE_UNDERSCORE CHAR_CODE_UNDERSCORE
+        charClass.add CHAR_CODE_LOWER_A CHAR_CODE_LOWER_Z
       return charClass
 
-    if acceptToken Token.whitespace:
+    if acceptToken WHITESPACE:
       charClass = new CharClass true
-    else if acceptToken Token.notWhitespace:
+    else if acceptToken NOT_WHITESPACE:
       charClass = new CharClass false
     if charClass != null:
       charClass.addSpaces
       return charClass
-    if peekToken Token.lSquare:
+    if peekToken L_SQUARE:
       return parseCharacterClass
-    if peekToken Token.none: error("Unexpected end of regexp")
+    if peekToken NONE: error("Unexpected end of regexp")
     error("Unexpected token $_lastToken")
     return null
 
@@ -1435,7 +1431,7 @@ class MiniExpParser:
       if code < 0:
         charClass.addSpecial(_at(-code + 1))
       else:
-        charClass.add(code, code)
+        charClass.add code code
 
     if (_has _position) and (_at _position) == CHAR_CODE_CARET:
       _position++
@@ -1467,13 +1463,13 @@ class MiniExpParser:
         // One end of the range is not a single character, so the range is
         // degenerate.  We add either and and the dash, instead of a range.
         addCharCode code
-        charClass.add(CHAR_CODE_DASH, CHAR_CODE_DASH)
-        addCharCode(code2)
+        charClass.add CHAR_CODE_DASH CHAR_CODE_DASH
+        addCharCode code2
       else:
         // Found a range.
         if code > code2: error("Character range out of order")
         charClass.add(code, code2)
-    expectToken Token.other;  // The terminating right square bracket.
+    expectToken OTHER;  // The terminating right square bracket.
     return charClass
 
   // Returns a character (possibly from a parsed escape) or a negative number
@@ -1534,48 +1530,48 @@ class MiniExpParser:
   bool peekToken(Token token) => token == _lastToken
 
   static const CHARCODE_TO_TOKEN = const <Token>[
-    Token.other, Token.other, Token.other, Token.other,    // 0-3
-    Token.other, Token.other, Token.other, Token.other,    // 4-7
-    Token.other, Token.other, Token.other, Token.other,    // 8-11
-    Token.other, Token.other, Token.other, Token.other,    // 12-15
-    Token.other, Token.other, Token.other, Token.other,    // 16-19
-    Token.other, Token.other, Token.other, Token.other,    // 20-23
-    Token.other, Token.other, Token.other, Token.other,    // 24-27
-    Token.other, Token.other, Token.other, Token.other,    // 28-31
-    Token.other, Token.other, Token.other, Token.other,    //  !"#
-    Token.dollar, Token.other, Token.other, Token.other,   // $%&'
-    Token.lParen, Token.rParen, Token.quant, Token.quant,  // ()*+,
-    Token.other, Token.other, Token.dot, Token.other,      // ,-./
-    Token.other, Token.other, Token.other, Token.other,    // 0123
-    Token.other, Token.other, Token.other, Token.other,    // 4567
-    Token.other, Token.other, Token.other, Token.other,    // 89:
-    Token.other, Token.other, Token.other, Token.quant,    // <=>?
-    Token.other, Token.other, Token.other, Token.other,    // @ABC
-    Token.other, Token.other, Token.other, Token.other,    // DEFG
-    Token.other, Token.other, Token.other, Token.other,    // HIJK
-    Token.other, Token.other, Token.other, Token.other,    // LMNO
-    Token.other, Token.other, Token.other, Token.other,    // PQRS
-    Token.other, Token.other, Token.other, Token.other,    // TUVW
-    Token.other, Token.other, Token.other, Token.lSquare,  // XYZ[
-    Token.backslash, Token.other, Token.hat, Token.other,  // \]^_
-    Token.other, Token.other, Token.other, Token.other,    // `abc
-    Token.other, Token.other, Token.other, Token.other,    // defg
-    Token.other, Token.other, Token.other, Token.other,    // hijk
-    Token.other, Token.other, Token.other, Token.other,    // lmno
-    Token.other, Token.other, Token.other, Token.other,    // pqrs
-    Token.other, Token.other, Token.other, Token.other,    // tuvw
-    Token.other, Token.other, Token.other, Token.quant,    // xyz{
-    Token.pipe, Token.other];                              // |}
+    OTHER, OTHER, OTHER, OTHER,    // 0-3
+    OTHER, OTHER, OTHER, OTHER,    // 4-7
+    OTHER, OTHER, OTHER, OTHER,    // 8-11
+    OTHER, OTHER, OTHER, OTHER,    // 12-15
+    OTHER, OTHER, OTHER, OTHER,    // 16-19
+    OTHER, OTHER, OTHER, OTHER,    // 20-23
+    OTHER, OTHER, OTHER, OTHER,    // 24-27
+    OTHER, OTHER, OTHER, OTHER,    // 28-31
+    OTHER, OTHER, OTHER, OTHER,    //  !"#
+    DOLLAR, OTHER, OTHER, OTHER,   // $%&'
+    L_PAREN, R_PAREN, QUANT, QUANT,  // ()*+,
+    OTHER, OTHER, DOT, OTHER,      // ,-./
+    OTHER, OTHER, OTHER, OTHER,    // 0123
+    OTHER, OTHER, OTHER, OTHER,    // 4567
+    OTHER, OTHER, OTHER, OTHER,    // 89:
+    OTHER, OTHER, OTHER, QUANT,    // <=>?
+    OTHER, OTHER, OTHER, OTHER,    // @ABC
+    OTHER, OTHER, OTHER, OTHER,    // DEFG
+    OTHER, OTHER, OTHER, OTHER,    // HIJK
+    OTHER, OTHER, OTHER, OTHER,    // LMNO
+    OTHER, OTHER, OTHER, OTHER,    // PQRS
+    OTHER, OTHER, OTHER, OTHER,    // TUVW
+    OTHER, OTHER, OTHER, L_SQUARE,  // XYZ[
+    BACKSLASH, OTHER, HAT, OTHER,  // \]^_
+    OTHER, OTHER, OTHER, OTHER,    // `abc
+    OTHER, OTHER, OTHER, OTHER,    // defg
+    OTHER, OTHER, OTHER, OTHER,    // hijk
+    OTHER, OTHER, OTHER, OTHER,    // lmno
+    OTHER, OTHER, OTHER, OTHER,    // pqrs
+    OTHER, OTHER, OTHER, OTHER,    // tuvw
+    OTHER, OTHER, OTHER, QUANT,    // xyz{
+    PIPE, OTHER];                              // |}
 
   static const ESCAPES = const:
-    CHAR_CODE_LOWER_B: Token.wordBoundary,
-    CHAR_CODE_UPPER_B: Token.notWordBoundary,
-    CHAR_CODE_LOWER_W: Token.wordCharacter,
-    CHAR_CODE_UPPER_W: Token.notWordCharacter,
-    CHAR_CODE_LOWER_D: Token.digit,
-    CHAR_CODE_UPPER_D: Token.notDigit,
-    CHAR_CODE_LOWER_S: Token.whitespace,
-    CHAR_CODE_UPPER_S: Token.notWhitespace
+    CHAR_CODE_LOWER_B: WORD_BOUNDARY,
+    CHAR_CODE_UPPER_B: NOT_WORD_BOUNDARY,
+    CHAR_CODE_LOWER_W: WORD_CHARACTER,
+    CHAR_CODE_UPPER_W: NOT_WORD_CHARACTER,
+    CHAR_CODE_LOWER_D: DIGIT,
+    CHAR_CODE_UPPER_D: NOT_DIGIT,
+    CHAR_CODE_LOWER_S: WHITESPACE,
+    CHAR_CODE_UPPER_S: NOT_WHITESPACE
 
   static const CONTROL_CHARACTERS = const:
     CHAR_CODE_LOWER_B: CHAR_CODE_BACKSPACE,
@@ -1586,7 +1582,7 @@ class MiniExpParser:
     CHAR_CODE_LOWER_V: CHAR_CODE_VERTICAL_TAB
 
   static Token tokenFromCharcode(int code):
-    if code >= CHARCODE_TO_TOKEN.size: return Token.other
+    if code >= CHARCODE_TO_TOKEN.size: return OTHER
     return CHARCODE_TO_TOKEN[code]
 
   bool onDigit(int _position):
@@ -1596,17 +1592,17 @@ class MiniExpParser:
 
   getToken -> none:
     if not _has _position:
-      _lastToken = Token.none
+      _lastToken = NONE
       return
     _lastTokenIndex = _position
     int code = _at _position
     Token token = _lastToken = tokenFromCharcode code
-    if token == Token.backslash:
+    if token == BACKSLASH:
       lexBackslash
       return
-    if token == Token.lParen:
+    if token == L_PAREN:
       lexLeftParenthesis
-    else if token == Token.quant:
+    else if token == QUANT:
       lexQuantifier
     _position++
 
@@ -1629,33 +1625,33 @@ class MiniExpParser:
       _lastToken = ESCAPES[nextCode]
     else if CONTROL_CHARACTERS.containsKey nextCode:
       _position += 2
-      _lastToken = Token.other
+      _lastToken = OTHER
       _lastTokenIndex =
           _compiler.addToConstantPool(CONTROL_CHARACTERS[nextCode])
     else if nextCode == CHAR_CODE_LOWER_C:
        if _has(_position + 2) and isAsciiLetter(_at(_position + 2)):
-         _lastToken = Token.other
+         _lastToken = OTHER
          _lastTokenIndex = _compiler.addToConstantPool(_at(_position + 2) % 32)
          _position += 3
        else:
          // \c_ is interpreted as a literal backslash and literal "c_".
-         _lastToken = Token.other
+         _lastToken = OTHER
          _lastTokenIndex = _position
          _position++
     else if onDigit(_position + 1):
       _position++
       _lastBackReferenceIndex = lexIntegerAsString
-      _lastToken = Token.backReference
+      _lastToken = BACK_REFERENCE
     else if nextCode == CHAR_CODE_LOWER_X or nextCode == CHAR_CODE_LOWER_U:
       _position += 2
-      _lastToken = Token.other
+      _lastToken = OTHER
       int codeUnit = lexHex(nextCode == CHAR_CODE_LOWER_X ? 2 : 4)
       if codeUnit == -1:
         _lastTokenIndex = _position - 1
       else:
         _lastTokenIndex = _compiler.addToConstantPool codeUnit
     else:
-      _lastToken = Token.other
+      _lastToken = OTHER
       _lastTokenIndex = _position + 1
       _position += 2
 
@@ -1708,11 +1704,11 @@ class MiniExpParser:
       if (!_has(_position + 2)) error("unterminated group")
       int parenthesisModifier = _at(_position + 2)
       if parenthesisModifier == CHAR_CODE_EQUALS:
-        _lastToken = Token.lookAhead
+        _lastToken = LOOK_AHEAD
       else if parenthesisModifier == CHAR_CODE_COLON:
-        _lastToken = Token.nonCapturing
+        _lastToken = NON_CAPTURING
       else if parenthesisModifier == CHAR_CODE_BANG:
-        _lastToken = Token.negativeLookAhead
+        _lastToken = NEGATIVE_LOOK_AHEAD
       else:
         error("invalid group")
       _position += 2
@@ -1749,7 +1745,7 @@ class MiniExpParser:
         // If parsing of the repeats fails then we follow JS in interpreting
         // the left brace as a literal.
         _position = savedPosition
-        _lastToken = Token.other
+        _lastToken = OTHER
         return
     else if quantifierCode == CHAR_CODE_ASTERISK:
       _minimumRepeats = 0
@@ -1766,7 +1762,6 @@ class MiniExpParser:
       _lastWasGreedy = false
     else:
       _lastWasGreedy = true
-}
 
 void disassemble(List<int> codes):
   print("\nDisassembly\n")
@@ -1781,22 +1776,20 @@ void disassemble(List<int> codes):
     if labels[i]: print("${i}:")
     i += disassembleSingleInstruction(codes, i, null)
   print("\nEnd Disassembly\n")
-}
 
 int disassembleSingleInstruction(List<int> codes, int i, List<int> registers):
     int code = codes[i]
     int regs = BYTE_CODE_NAMES[code * 3 + 1]
     int otherArgs = BYTE_CODE_NAMES[code * 3 + 2]
     String line = "${i}: ${BYTE_CODE_NAMES[code * 3]}"
-    for int j = 0; j < regs; j++:
+    for j := 0; j < regs; j++:
       int reg = codes[i + 1 + j]
       line = "${line} ${REGISTER_NAMES[reg]}"
       if registers != null: line = "${line}:${registers[reg]}"
-    for int j = 0; j < otherArgs; j++:
+    for j := 0; j < otherArgs; j++:
       line = line + " " + codes[i + 1 + regs + j].toString
     print line
     return regs + otherArgs + 1
-}
 
 class MiniExpInterpreter:
   final List<int> _byteCodes
@@ -1906,7 +1899,7 @@ class MiniExpInterpreter:
         case GOTO_IF_WORD_CHARACTER:
           int offset = _byteCodes[programCounter++]
           int charCode =
-              subject.codeUnitAt(_registers[CURRENT_POSITION] + offset)
+              subject.codeUnitAt _registers[CURRENT_POSITION] + offset
           int dest = _byteCodes[programCounter++]
           if charCode >= CHAR_CODE_0:
             if charCode <= CHAR_CODE_9:
@@ -1936,7 +1929,7 @@ class MiniExpInterpreter:
         case BACKTRACK_ON_BACK_REFERENCE:
           int registerIndex = _byteCodes[programCounter++]
           bool case_sensitive = _byteCodes[programCounter++] != 0
-          if not checkBackReference(subject, case_sensitive, registerIndex):
+          if not checkBackReference subject case_sensitive registerIndex:
             // Backtrack.
             _registers[CURRENT_POSITION] = stack[--stackPointer]
             programCounter = stack[--stackPointer]
@@ -1961,7 +1954,7 @@ class MiniExpInterpreter:
     int length = end - start
     int currentPosition = _registers[CURRENT_POSITION]
     if currentPosition + end - start > subject.size: return false
-    for int i = 0; i < length; i++:
+    for i := 0; i < length; i++:
       int x = subject.codeUnitAt(start + i)
       int y = subject.codeUnitAt(currentPosition + i)
       if not caseSensitive:
@@ -1970,4 +1963,3 @@ class MiniExpInterpreter:
       if x != y: return false
     _registers[CURRENT_POSITION] += length
     return true
-}
