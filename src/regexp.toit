@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE.md file.
 
+import bytes show Buffer
+
 class MiniExpLabel:
   // Initially points to -1 to indicate the label is neither linked (used) nor
   // bound (fixed to a location). When the label is linked, but not bound, it
@@ -148,7 +150,7 @@ class MiniExpCompiler:
   caseSensitive /bool ::= ?
   registers /List ::= []
   captureRegisterCount /int := 0
-  firstCaptureRegister /int := ?
+  firstCaptureRegister /int := -1
   _codes /List ::= []
   _extraConstants /List ::= []
   _backReferences /List ::= []
@@ -156,14 +158,14 @@ class MiniExpCompiler:
 
   constructor .pattern .caseSensitive:
     for i := 0; i < FIXED_REGISTERS; i++:
-      registers.add i == NO_POSITION_REGISTER ? NO_POSITION : 0
+      registers.add (i == NO_POSITION_REGISTER ? NO_POSITION : 0)
 
   codes -> List:
     flushPendingGoto
     return _codes
 
   constantPool -> string:
-    if _extraConstants.isEmpty:
+    if _extraConstants.is_empty:
       return pattern
     else:
       return pattern + (string.from_runes _extraConstants)
@@ -376,7 +378,7 @@ class MiniExpAnalysis:
   // fixed length thing has to be something that does not touch the stack.  This
   // is an important optimization that prevents .* from using huge amounts of
   // stack space when running.
-  fixedLength /int ::= ?
+  fixedLength /int? ::= ?
 
   // Can this subtree only match at the start of the regexp?  Can't pass all
   // tests without being able to spot this.
@@ -384,17 +386,17 @@ class MiniExpAnalysis:
 
   // Allows the AST to notify a surrounding loop (a quantifier higher up the
   // tree) that it has registers it expects to be saved on the back edge.
-  registersToSave/List/*<int>*/ ::= ?
+  registersToSave/List?/*<int>*/ ::= ?
 
   static combineRegisters left/List/*<int>*/ right/List/*<int>*/ -> List/*<int>*/:
-    if right == null or right.isEmpty:
+    if right == null or right.is_empty:
       return left
-    else if left == null or left.isEmpty:
+    else if left == null or left.is_empty:
       return right
     else:
       return left + right  // List concatenation.
 
-  static combineFixedLengths left/MiniExpAnalysis right/MiniExpAnalysis -> int:
+  static combineFixedLengths left/MiniExpAnalysis right/MiniExpAnalysis -> int?:
     if left.fixedLength == null or right.fixedLength == null:
       return null
     else:
@@ -629,7 +631,7 @@ class LookAhead extends Assertion:
       // we don't ever backtrack into a lookahead, but if we backtrack past
       // this point we have to undo any captures that happened in there.
       // Register a backtrack to do that before continuing.
-      if _subtreeRegisters != null and _subtreeRegisters.isNotEmpty:
+      if _subtreeRegisters != null and not _subtreeRegisters.is_empty:
         undoCaptures = MiniExpLabel
         compiler.pushBacktrack undoCaptures
 
@@ -642,7 +644,7 @@ class LookAhead extends Assertion:
       compiler.backtrack
 
   analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    bodyAnalysis/MiniExpLabel := _body.analyze compiler
+    bodyAnalysis/MiniExpAnalysis := _body.analyze compiler
     _subtreeRegisters = bodyAnalysis.registersToSave
     return MiniExpAnalysis.lookahead bodyAnalysis _positive
 
@@ -821,7 +823,7 @@ class Quantifier extends MiniExpAst:
       compiler.goto bodyMatched
 
   analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    bodyAnalysis/MiniExpLabel := _body.analyze compiler
+    bodyAnalysis/MiniExpAnalysis := _body.analyze compiler
     _subtreeRegistersThatNeedSaving = bodyAnalysis.registersToSave
     _bodyLength = bodyAnalysis.fixedLength
     if bodyAnalysis.canMatchEmpty:
@@ -844,7 +846,7 @@ class Quantifier extends MiniExpAst:
 
   _saveAndRestoreRegisters:
     return _subtreeRegistersThatNeedSaving != null and
-           _subtreeRegistersThatNeedSaving.isNotEmpty
+           not _subtreeRegistersThatNeedSaving.is_empty
 
 class Atom extends MiniExpAst:
   _constantIndex /int ::= ?
@@ -1074,7 +1076,7 @@ interface Match:
   input -> string
   start -> int
   end -> int
-  group index/int -> string
+  group index/int -> string?
   operator [] index/int -> string
 
 class MiniExpMatch implements Match:
@@ -1091,25 +1093,25 @@ class MiniExpMatch implements Match:
 
   end -> int: return _registers[_firstCaptureReg + 1]
 
-  group index/int -> string:
+  group index/int -> string?:
     if index > groupCount:
       throw "OUT_OF_RANGE"
     index *= 2
     index += _firstCaptureReg
     if _registers[index] == NO_POSITION: return null
-    return input.copy --from=_registers[index] --to=_registers[index + 1]
+    return input.copy _registers[index] _registers[index + 1]
 
-  operator[] index/int -> string: return group index
+  operator[] index/int -> string?: return group index
 
 interface RegExp:
   pattern -> string
-  isMultiLine -> bool
-  isCaseSensitive -> bool
-  matchAsPrefix a/string a1/int -> Match
-  firstMatching a/string -> Match
-  hasMatching a/string -> bool
-  stringMatching a/string -> string
-  allMatches subject/string start/int [block] -> bool
+  is_multiline -> bool
+  is_case_sensitive -> bool
+  match_as_prefix a/string a1/int -> Match
+  first_matching a/string -> Match
+  has_matching a/string -> bool
+  string_matching a/string -> string?
+  all_matches subject/string start/int [block] -> bool
 
 class _MiniExp implements RegExp:
   _byteCodes/List?/*<int>*/ := null
@@ -1118,25 +1120,25 @@ class _MiniExp implements RegExp:
   _stickyEntryPoint/int? := null
   _constantPool/string? := null
   pattern /string ::= ?
-  isMultiLine /bool ::= ?
-  isCaseSensitive /bool ::= ?
+  is_multiline /bool ::= ?
+  is_case_sensitive /bool ::= ?
 
-  constructor .pattern/string .isMultiLine .isCaseSensitive:
-    compiler := MiniExpCompiler pattern isCaseSensitive
-    parser := MiniExpParser compiler pattern isMultiLine
+  constructor .pattern/string .is_multiline .is_case_sensitive:
+    compiler := MiniExpCompiler pattern is_case_sensitive
+    parser := MiniExpParser compiler pattern is_multiline
     ast/MiniExpAst := parser.parse
     _generateCode compiler ast pattern
 
-  matchAsPrefix a/string a1/int=0 -> Match:
+  match_as_prefix a/string a1/int=0 -> Match?:
     return _match a a1 _stickyEntryPoint
 
-  firstMatching a/string -> Match:
+  first_matching a/string -> Match?:
     return _match a 0 0
 
-  hasMatching a/string -> bool:
+  has_matching a/string -> bool:
     return (_match a 0 0) != null
 
-  stringMatching a/string -> string:
+  string_matching a/string -> string?:
     m/Match := _match a 0 0
     if m == null: return null
     return m[0]
@@ -1145,7 +1147,7 @@ class _MiniExp implements RegExp:
   Calls the block once for each match with the match as argument.
   Returns true iff there was at least one match.
   */
-  allMatches subject/string start/int=0 [block] -> bool:
+  all_matches subject/string start/int=0 [block] -> bool:
     at_least_once := false
     position := start
     if not 0 <= position <= subject.size: throw "OUT_OF_RANGE"
@@ -1158,8 +1160,9 @@ class _MiniExp implements RegExp:
         position = current.end
       block.call current
       at_least_once = true
+    return at_least_once
 
-  _match a/string startPosition/int startProgramCounter/int -> Match:
+  _match a/string startPosition/int startProgramCounter/int -> Match?:
     registers/List/*<int>*/ := _initialRegisterValues.copy
     interpreter := MiniExpInterpreter _byteCodes _constantPool registers
     if not interpreter.interpret a startPosition startProgramCounter:
@@ -1248,7 +1251,7 @@ class MiniExpParser:
   _isMultiLine /bool ::= ?
 
   _captureCount /int := 0
-  _constantPool /string
+  _constantPool /string := ""
 
   // State of the parser and lexer.
   _position/int := 0  // Location in source.
@@ -1257,10 +1260,10 @@ class MiniExpParser:
   // with the token.
   _lastTokenIndex/int := -1
   // Greedyness of the last single-character quantifier.
-  _lastWasGreedy/bool
+  _lastWasGreedy/bool := false
   _lastBackReferenceIndex/string? := null
-  _minimumRepeats/int
-  _maximumRepeats/int
+  _minimumRepeats/int? := null
+  _maximumRepeats/int? := null
 
   constructor ._compiler ._source ._isMultiLine:
 
@@ -1296,7 +1299,7 @@ class MiniExpParser:
       ast = Alternative ast parseTerm
     return ast
 
-  tryParseAssertion -> MiniExpAst:
+  tryParseAssertion -> MiniExpAst?:
     if acceptToken HAT:
       return _isMultiLine ? AtBeginningOfLine : AtStart
     if acceptToken DOLLAR:
@@ -1329,7 +1332,7 @@ class MiniExpParser:
         return quant
     return ast
 
-  parseAtom -> MiniExpAst:
+  parseAtom -> MiniExpAst?:
     if peekToken OTHER:
       result := Atom _lastTokenIndex
       expectToken OTHER
@@ -1392,17 +1395,18 @@ class MiniExpParser:
   parseCharacterClass -> MiniExpAst:
     charClass/CharClass := ?
 
+    if (_has _position) and (_at _position) == '^':
+      _position++
+      charClass = CharClass false
+    else:
+      charClass = CharClass true
+
     addCharCode := : | code |
       if code < 0:
         charClass.addSpecial(_at(-code + 1))
       else:
         charClass.add code code
 
-    if (_has _position) and (_at _position) == '^':
-      _position++
-      charClass = CharClass false
-    else:
-      charClass = CharClass true
     while _has _position:
       code/int := _at _position
       degenerateRange := false
@@ -1642,17 +1646,17 @@ class MiniExpParser:
     return total
 
   lexIntegerAsString -> string:
-    StringBuffer b = StringBuffer
+    b := Buffer
     while true:
-      if not _has _position: return b.toString
+      if not _has _position: return b.to_string
       code := _at _position
       if code >= '0' and code <= '9':
-        b.write(String.fromCharCode code)
+        b.put_byte code
         _position++
       else:
-        return b.toString
+        return b.to_string
 
-  lexInteger base/int max/int -> int:
+  lexInteger base/int max/int? -> int:
     total/int := 0
     while true:
       if not _has _position: return total
@@ -1691,13 +1695,13 @@ class MiniExpParser:
         // and {n,m}.
         _minimumRepeats = lexInteger 10 null
         if _has _position:
-          if _at _position == '}':
+          if (_at _position) == '}':
             _maximumRepeats = _minimumRepeats
             parsedRepeats = true
-          else if _at _position == ',':
+          else if (_at _position) == ',':
             _position++
             if _has _position:
-              if _at _position == '}':
+              if (_at _position) == '}':
                 _maximumRepeats = null;  // No maximum.
                 parsedRepeats = true
               else if onDigit _position:
@@ -1722,8 +1726,7 @@ class MiniExpParser:
     else:
       _minimumRepeats = 0
       _maximumRepeats = 1
-    if (_has(_position + 1) and
-        _at(_position + 1) == '?'):
+    if (_has _position + 1) and (_at _position + 1) == '?':
       _position++
       _lastWasGreedy = false
     else:
@@ -1743,7 +1746,7 @@ disassemble codes/List/*<int>*/ -> none:
     i += disassembleSingleInstruction codes i null
   print "\nEnd Disassembly\n"
 
-disassembleSingleInstruction codes/List/*<int>*/ i/int registers/List/*<int>*/ -> int:
+disassembleSingleInstruction codes/List/*<int>*/ i/int registers/List?/*<int>*/ -> int:
     code/int := codes[i]
     regs/int := BYTE_CODE_NAMES[code * 3 + 1]
     otherArgs/int := BYTE_CODE_NAMES[code * 3 + 2]
@@ -1773,144 +1776,124 @@ class MiniExpInterpreter:
     while true:
       byteCode := _byteCodes[programCounter]
       programCounter++
-      switch (byteCode):
-        case GOTO:
-          programCounter = _byteCodes[programCounter]
-          break
-        case PUSH_REGISTER:
-          int reg = _registers[_byteCodes[programCounter++]]
-          if stackPointer == stack.size:
-            stack.add reg
-            stackPointer++
-          else:
-            stack[stackPointer++] = reg
-          break
-        case PUSH_BACKTRACK:
-          int value = _byteCodes[programCounter++]
-          if stackPointer == stack.size:
-            stack.add value
-            stackPointer++
-          else:
-            stack[stackPointer++] = value
-          int position = _registers[CURRENT_POSITION]
-          if stackPointer == stack.size:
-            stack.add position
-            stackPointer++
-          else:
-            stack[stackPointer++] = position
-          break
-        case POP_REGISTER:
-          _registers[_byteCodes[programCounter++]] = stack[--stackPointer]
-          break
-        case BACKTRACK_EQ:
-          int reg1 = _registers[_byteCodes[programCounter++]]
-          int reg2 = _registers[_byteCodes[programCounter++]]
-          if reg1 == reg2:
-            _registers[CURRENT_POSITION] = stack[--stackPointer]
-            programCounter = stack[--stackPointer]
-          break
-        case BACKTRACK_NE:
-          int reg1 = _registers[_byteCodes[programCounter++]]
-          int reg2 = _registers[_byteCodes[programCounter++]]
-          if reg1 != reg2:
-            _registers[CURRENT_POSITION] = stack[--stackPointer]
-            programCounter = stack[--stackPointer]
-          break
-        case BACKTRACK_GT:
-          int reg1 = _registers[_byteCodes[programCounter++]]
-          int reg2 = _registers[_byteCodes[programCounter++]]
-          if reg1 > reg2:
-            _registers[CURRENT_POSITION] = stack[--stackPointer]
-            programCounter = stack[--stackPointer]
-          break
-        case BACKTRACK_IF_NO_MATCH:
-          if (subject.codeUnitAt(_registers[CURRENT_POSITION]) !=
-              _constantPool.codeUnitAt(_byteCodes[programCounter++])):
-            _registers[CURRENT_POSITION] = stack[--stackPointer]
-            programCounter = stack[--stackPointer]
-          break
-        case BACKTRACK_IF_IN_RANGE:
-          int code = subject.codeUnitAt(_registers[CURRENT_POSITION])
-          int from = _byteCodes[programCounter++]
-          int to = _byteCodes[programCounter++]
-          if from <= code and code <= to:
-            _registers[CURRENT_POSITION] = stack[--stackPointer]
-            programCounter = stack[--stackPointer]
-          break
-        case GOTO_IF_MATCH:
-          int code = subject.codeUnitAt(_registers[CURRENT_POSITION])
-          int expected = _byteCodes[programCounter++]
-          int dest = _byteCodes[programCounter++]
-          if code == expected: programCounter = dest
-          break
-        case GOTO_IF_IN_RANGE:
-          int code = subject.codeUnitAt(_registers[CURRENT_POSITION])
-          int from = _byteCodes[programCounter++]
-          int to = _byteCodes[programCounter++]
-          int dest = _byteCodes[programCounter++]
-          if from <= code and code <= to: programCounter = dest
-          break
-        case GOTO_EQ:
-          int reg1 = _registers[_byteCodes[programCounter++]]
-          int reg2 = _registers[_byteCodes[programCounter++]]
-          int dest = _byteCodes[programCounter++]
-          if reg1 == reg2: programCounter = dest
-          break
-        case GOTO_GE:
-          int reg1 = _registers[_byteCodes[programCounter++]]
-          int reg2 = _registers[_byteCodes[programCounter++]]
-          int dest = _byteCodes[programCounter++]
-          if reg1 >= reg2: programCounter = dest
-          break
-        case GOTO_IF_WORD_CHARACTER:
-          int offset = _byteCodes[programCounter++]
-          int charCode =
-              subject.codeUnitAt _registers[CURRENT_POSITION] + offset
-          int dest = _byteCodes[programCounter++]
-          if charCode >= '0':
-            if charCode <= '9':
-              programCounter = dest
-            else if charCode >= 'A':
-              if charCode <= 'Z':
-                programCounter = dest
-              else if charCode == '_':
-                programCounter = dest
-              else if (charCode >= 'a' and
-                         charCode <= 'z'):
-                programCounter = dest
-          break
-        case ADD_TO_REGISTER:
-          int registerIndex = _byteCodes[programCounter++]
-          _registers[registerIndex] += _byteCodes[programCounter++]
-          break
-        case COPY_REGISTER:
-          // We don't normally keep the stack pointer in sync with its slot in
-          // the _registers, but we have to have it in sync here.
-          _registers[STACK_POINTER] = stackPointer
-          int registerIndex = _byteCodes[programCounter++]
-          int value = _registers[_byteCodes[programCounter++]]
-          _registers[registerIndex] = value
-          stackPointer = _registers[STACK_POINTER]
-          break
-        case BACKTRACK_ON_BACK_REFERENCE:
-          int registerIndex = _byteCodes[programCounter++]
-          case_sensitive := _byteCodes[programCounter++] != 0
-          if not checkBackReference subject case_sensitive registerIndex:
-            // Backtrack.
-            _registers[CURRENT_POSITION] = stack[--stackPointer]
-            programCounter = stack[--stackPointer]
-          break
-        case BACKTRACK:
+      // TODO: Faster implementation.
+      if byteCode == GOTO:
+        programCounter = _byteCodes[programCounter]
+      else if byteCode == PUSH_REGISTER:
+        reg/int := _registers[_byteCodes[programCounter++]]
+        if stackPointer == stack.size:
+          stack.add reg
+          stackPointer++
+        else:
+          stack[stackPointer++] = reg
+      else if byteCode == PUSH_BACKTRACK:
+        value/int := _byteCodes[programCounter++]
+        if stackPointer == stack.size:
+          stack.add value
+          stackPointer++
+        else:
+          stack[stackPointer++] = value
+        position/int := _registers[CURRENT_POSITION]
+        if stackPointer == stack.size:
+          stack.add position
+          stackPointer++
+        else:
+          stack[stackPointer++] = position
+      else if byteCode == POP_REGISTER:
+        _registers[_byteCodes[programCounter++]] = stack[--stackPointer]
+      else if byteCode == BACKTRACK_EQ:
+        reg1/int := _registers[_byteCodes[programCounter++]]
+        reg2/int := _registers[_byteCodes[programCounter++]]
+        if reg1 == reg2:
           _registers[CURRENT_POSITION] = stack[--stackPointer]
           programCounter = stack[--stackPointer]
-          break
-        case SUCCEED:
-          return true
-        case FAIL:
-          return false
-        default:
-          assert(false)
-          break
+      else if byteCode == BACKTRACK_NE:
+        reg1/int := _registers[_byteCodes[programCounter++]]
+        reg2/int := _registers[_byteCodes[programCounter++]]
+        if reg1 != reg2:
+          _registers[CURRENT_POSITION] = stack[--stackPointer]
+          programCounter = stack[--stackPointer]
+      else if byteCode == BACKTRACK_GT:
+        reg1/int := _registers[_byteCodes[programCounter++]]
+        reg2/int := _registers[_byteCodes[programCounter++]]
+        if reg1 > reg2:
+          _registers[CURRENT_POSITION] = stack[--stackPointer]
+          programCounter = stack[--stackPointer]
+      else if byteCode == BACKTRACK_IF_NO_MATCH:
+        if (subject.at --raw _registers[CURRENT_POSITION]) !=
+            (_constantPool.at --raw _byteCodes[programCounter++]):
+          _registers[CURRENT_POSITION] = stack[--stackPointer]
+          programCounter = stack[--stackPointer]
+      else if byteCode == BACKTRACK_IF_IN_RANGE:
+        code/int := subject.at --raw _registers[CURRENT_POSITION]
+        from/int := _byteCodes[programCounter++]
+        to/int := _byteCodes[programCounter++]
+        if from <= code and code <= to:
+          _registers[CURRENT_POSITION] = stack[--stackPointer]
+          programCounter = stack[--stackPointer]
+      else if byteCode == GOTO_IF_MATCH:
+        code/int := subject.at --raw _registers[CURRENT_POSITION]
+        expected/int := _byteCodes[programCounter++]
+        dest/int := _byteCodes[programCounter++]
+        if code == expected: programCounter = dest
+      else if byteCode == GOTO_IF_IN_RANGE:
+        code/int := subject.at --raw _registers[CURRENT_POSITION]
+        from/int := _byteCodes[programCounter++]
+        to/int := _byteCodes[programCounter++]
+        dest/int := _byteCodes[programCounter++]
+        if from <= code and code <= to: programCounter = dest
+      else if byteCode == GOTO_EQ:
+        reg1/int := _registers[_byteCodes[programCounter++]]
+        reg2/int := _registers[_byteCodes[programCounter++]]
+        dest/int := _byteCodes[programCounter++]
+        if reg1 == reg2: programCounter = dest
+      else if byteCode == GOTO_GE:
+        reg1/int := _registers[_byteCodes[programCounter++]]
+        reg2/int := _registers[_byteCodes[programCounter++]]
+        dest/int := _byteCodes[programCounter++]
+        if reg1 >= reg2: programCounter = dest
+      else if byteCode == GOTO_IF_WORD_CHARACTER:
+        offset/int := _byteCodes[programCounter++]
+        charCode/int :=
+            subject.at --raw _registers[CURRENT_POSITION] + offset
+        dest/int := _byteCodes[programCounter++]
+        if charCode >= '0':
+          if charCode <= '9':
+            programCounter = dest
+          else if charCode >= 'A':
+            if charCode <= 'Z':
+              programCounter = dest
+            else if charCode == '_':
+              programCounter = dest
+            else if (charCode >= 'a' and
+                       charCode <= 'z'):
+              programCounter = dest
+      else if byteCode == ADD_TO_REGISTER:
+        registerIndex/int := _byteCodes[programCounter++]
+        _registers[registerIndex] += _byteCodes[programCounter++]
+      else if byteCode == COPY_REGISTER:
+        // We don't normally keep the stack pointer in sync with its slot in
+        // the _registers, but we have to have it in sync here.
+        _registers[STACK_POINTER] = stackPointer
+        registerIndex/int := _byteCodes[programCounter++]
+        value/int := _registers[_byteCodes[programCounter++]]
+        _registers[registerIndex] = value
+        stackPointer = _registers[STACK_POINTER]
+      else if byteCode == BACKTRACK_ON_BACK_REFERENCE:
+        registerIndex/int := _byteCodes[programCounter++]
+        case_sensitive := _byteCodes[programCounter++] != 0
+        if not checkBackReference subject case_sensitive registerIndex:
+          // Backtrack.
+          _registers[CURRENT_POSITION] = stack[--stackPointer]
+          programCounter = stack[--stackPointer]
+      else if byteCode == BACKTRACK:
+        _registers[CURRENT_POSITION] = stack[--stackPointer]
+        programCounter = stack[--stackPointer]
+        return true
+      else if byteCode == FAIL:
+        return false
+      else:
+        assert: false
 
   checkBackReference subject/string caseSensitive/bool registerIndex/int -> bool:
     start/int := _registers[registerIndex]
@@ -1920,8 +1903,8 @@ class MiniExpInterpreter:
     currentPosition/int := _registers[CURRENT_POSITION]
     if currentPosition + end - start > subject.size: return false
     for i := 0; i < length; i++:
-      x := subject.codeUnitAt(start + i)
-      y := subject.codeUnitAt(currentPosition + i)
+      x := subject.at --raw start + i
+      y := subject.at --raw currentPosition + i
       if not caseSensitive:
         x = internalRegExpCanonicalize x
         y = internalRegExpCanonicalize y
