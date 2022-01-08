@@ -1906,8 +1906,8 @@ class MiniExpInterpreter:
       x := subject.at --raw start + i
       y := subject.at --raw currentPosition + i
       if not caseSensitive:
-        x = internalRegExpCanonicalize x
-        y = internalRegExpCanonicalize y
+        x = reg_exp_canonicalize_ x
+        y = reg_exp_canonicalize_ y
       if x != y: return false
     _registers[CURRENT_POSITION] += length
     return true
