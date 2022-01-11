@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE.md file.
 
 import bytes show Buffer
+import .case
 
 class MiniExpLabel:
   // Initially points to -1 to indicate the label is neither linked (used) nor

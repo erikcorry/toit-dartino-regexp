@@ -4,10 +4,10 @@
 
 import bytes show Buffer
 
-TO_UPPER_ ::= ToUpperConverter
-TO_LOWER_ ::= ToLowerConverter
-REG_EXP_CANONICALIZE_ ::= RegExpCanonicalizer
-REG_EXP_EQUIVALENCE_CLASSES_ ::= RegExpEquivalenceClasses
+TO_UPPER_ ::= ToUpperConverter_
+TO_LOWER_ ::= ToLowerConverter_
+REG_EXP_CANONICALIZE_ ::= RegExpCanonicalizer_
+REG_EXP_EQUIVALENCE_CLASSES_ ::= RegExpEquivalenceClasses_
 
 // This is a case conversion library.  It is based on the idea of running a
 // little program written in a bytecode.  The program makes calls to a user-
@@ -62,25 +62,27 @@ to_some_case_ converter/CaseConverter src/string -> string:
       b.write src[substring_start..index]
       substring_start = -1
 
-  src.do --runes: | code |
-    dest / string? := converter.map code
-    if dest == null:
-      if substring_start == -1: substring_start = index
-    else:
-      flush_substring.call
-      b.write dest
+  src.do: | code |
+    if code:
+      dest / string? := converter.map code
+      if dest == null:
+        if substring_start == -1: substring_start = index
+      else:
+        //print "Gave $code ($(%c code)), got $dest ($dest))"
+        flush_substring.call
+        b.write dest
     index++
   if substring_start == 0: return src
   flush_substring.call
   return b.bytes.to_string
 
-internal_to_upper_case src/string -> string:
+to_upper src/string -> string:
   return to_some_case_ TO_UPPER_ src
 
-internal_to_lower_case src/string -> string:
+to_lower src/string -> string:
   return to_some_case_ TO_LOWER_ src
 
-internal_reg_exp_equivalence_class rune/int -> List/*<int>*/:
+reg_exp_equivalence_class rune/int -> List/*<int>*/:
   return REG_EXP_EQUIVALENCE_CLASSES_.map rune
 
 reg_exp_canonicalize_ rune/int -> int:
@@ -88,7 +90,7 @@ reg_exp_canonicalize_ rune/int -> int:
   if answer == null: return rune  // Unchanged.
   return answer
 
-abstract class CaseTable:
+abstract class CaseTable_:
   pages_ / Map/*<int, List>*/ := Map
   last_page_number_ / int := -1
   last_page_map_ / List? := null
@@ -103,7 +105,7 @@ abstract class CaseTable:
       last_page_map_ = pages_[page]
     return last_page_map_ == null ? null : last_page_map_[rune & PAGE_MASK_]
 
-abstract class CaseConverter extends CaseTable:
+abstract class CaseConverter extends CaseTable_:
   // f takes from/int to/int append/bool
   abstract run_ [f] -> none
 
@@ -129,6 +131,8 @@ abstract class StringCaseConverter extends CaseConverter:
   add_entry page_list/List from/int to/int append/bool -> none:
     to_string := string.from_rune to
     low_bits := from & PAGE_MASK_
+    //print "In add_entry, $from-$to low_bits=$low_bits $page_list"
+    //throw "foo"
     if append and page_list[low_bits] != null:
       // This is relatively rare, and the string never ends up larger than
       // 3 characters.
@@ -139,7 +143,7 @@ abstract class StringCaseConverter extends CaseConverter:
 // Regular expression canonicalization uses the to-upper tables, but is specced
 // to only use the single character mappings.  We use char codes, not short
 // strings.
-class RegExpCanonicalizer extends CaseConverter:
+class RegExpCanonicalizer_ extends CaseConverter:
   add_entry page_list/List from/int to/int append/bool -> none:
     low_bits := from & PAGE_MASK_
     page_list[low_bits] = to
@@ -149,8 +153,7 @@ class RegExpCanonicalizer extends CaseConverter:
     interpreter.interpret: | from to | f.call from to false  // Unused boolean argument.
 
 // toUpperCase maps from char codes to short strings (1-3 characters).
-class ToUpperConverter extends StringCaseConverter:
-
+class ToUpperConverter_ extends StringCaseConverter:
   run_ [f] -> none:
     overwrite_map := : | from to | f.call from to false
     append_map := : | from to | f.call from to true
@@ -165,13 +168,13 @@ class ToUpperConverter extends StringCaseConverter:
     (Interpreter S3_PROGRAM_ true).interpret append_map
 
 // toLowerCase maps from char codes to one-character strings.
-class ToLowerConverter extends StringCaseConverter:
+class ToLowerConverter_ extends StringCaseConverter:
   run_ [f] -> none:
     (Interpreter TO_LOWER_PROGRAM_ false).interpret: | from to | f.call from to false
 
 // The equivalence classes map from char codes to short lists of
 // equivalent char codes.
-class RegExpEquivalenceClasses extends CaseTable:
+class RegExpEquivalenceClasses_ extends CaseTable_:
   static LAST_ASCII_RUNE_ ::= 0x7f
 
   add_page_ page/int -> List?:
@@ -448,7 +451,7 @@ class Interpreter:
   constructor .byte_codes_ to_upper/bool:
     sign := to_upper ? -1 : 1
     fixed_offsets_ = List COMMON_OFFSETS_.size:
-      it * sign
+      COMMON_OFFSETS_[it] * sign
 
   // Takes a block with arguments c/int mapped/int
   interpret [map] -> none:
@@ -457,14 +460,17 @@ class Interpreter:
     right_reg := 0
     byte_codes_.size.repeat: 
       byte := byte_codes_[it]
+      //print "byte code $(%02x byte)"
       op_code := byte & OP_CODE_MASK_
       argument := (byte & ARGUMENT_MASK_) + (extend_reg << ARGUMENT_BITS_)
       if op_code == EXTEND_:
+        //print "EXTEND $argument"
         extend_reg = argument
       else:
         if op_code == EMIT_:
           if extend_reg == 0: extend_reg = 1
           increment := ((byte >> POST_INCREMENT_SHIFT_) & POST_INCREMENT_MASK_) + 1
+          //print "EMIT$((byte & EMIT_MASK_) == EMIT_R_ ? "R" : "L") $increment ($extend_reg times)"
           extend_reg.repeat: | i |
             if (byte & EMIT_MASK_) == EMIT_R_:
               pre_increment := (byte & EMIT_R_MASK_) - EMIT_R_BIAS_
@@ -473,12 +479,15 @@ class Interpreter:
             else:
               // EMIT_L_.
               offset := fixed_offsets_[byte & EMIT_L_MASK_]
+              //print "offset from $(byte & EMIT_L_MASK_) = $offset"
               if not map.call left_reg left_reg + offset: return
             left_reg += increment
         else:
           if op_code == ADD_L_:
+            //print "ADDL left_reg from $left_reg to $(left_reg + argument)"
             left_reg += argument
           else:
             // op_code == LOAD_R_.
+            //print "LOAD_R $argument"
             right_reg = argument
         extend_reg = 0

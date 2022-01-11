@@ -1,0 +1,5 @@
+prefixes:
+  string_utils: ..
+packages:
+  ..:
+    path: ..
