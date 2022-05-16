@@ -30,7 +30,7 @@ REG_EXP_EQUIVALENCE_CLASSES_ ::= RegExpEquivalenceClasses_
 // running the program when the first codepoint appears that is above the page
 // we are currently interested in.
 
-// For toUpperCase and toLowerCase, the maps of the code point pages are simply
+// For to_upper_case and to_lower_case, the maps of the code point pages are simply
 // lists of 256 strings, containing the 1-character string that is the mapping
 // for the corresponding character (or rarely 2 or 3 characters).  Most Unicode
 // characters do not have any case mapping (only about 1100 out of 29
@@ -152,7 +152,7 @@ class RegExpCanonicalizer_ extends CaseConverter:
     interpreter := Interpreter TO_UPPER_PROGRAM_ true
     interpreter.interpret: | from to | f.call from to false  // Unused boolean argument.
 
-// toUpperCase maps from char codes to short strings (1-3 characters).
+// to_upper_case maps from char codes to short strings (1-3 characters).
 class ToUpperConverter_ extends StringCaseConverter:
   run_ [f] -> none:
     overwrite_map := : | from to | f.call from to false
@@ -167,7 +167,7 @@ class ToUpperConverter_ extends StringCaseConverter:
     // Third character of multi-character upper case mappings.
     (Interpreter S3_PROGRAM_ true).interpret append_map
 
-// toLowerCase maps from char codes to one-character strings.
+// to_lower_case maps from char codes to one-character strings.
 class ToLowerConverter_ extends StringCaseConverter:
   run_ [f] -> none:
     (Interpreter TO_LOWER_PROGRAM_ false).interpret: | from to | f.call from to false
@@ -229,7 +229,7 @@ class RegExpEquivalenceClasses_ extends CaseTable_:
       if (to > LAST_ASCII_RUNE_ or from <= LAST_ASCII_RUNE_) and
           (chars_that_map_to_each_canonical.contains to):
         chars_that_map_to_each_canonical[to].add from
-      // Always continue, we have to run through all the toUpperCase byte codes.
+      // Always continue, we have to run through all the to_upper_case byte codes.
       true
 
     (Interpreter TO_UPPER_PROGRAM_ true).interpret collect_sets
@@ -390,7 +390,7 @@ TO_LOWER_PROGRAM_ ::= #[
 COMMON_OFFSETS_ ::= #[1, 2, 8, 16, 26, 32, 48, 80]
 
 // The bytecodes are designed to operate on a highly specialized three register
-// machine.  The registers are X (eXtend) L (Left) and R (Right).  There are no
+// machine.  The registers are X (e_xtend) L (Left) and R (Right).  There are no
 // branches or loops, and L can only increase, never decrease.  Apart from
 // instructions that manipulate the internal machine state, there are two
 // instructions, EMIT_L_ and EMIT_R_, that declare a mapping from an original
