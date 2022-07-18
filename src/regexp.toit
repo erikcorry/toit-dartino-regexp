@@ -172,7 +172,7 @@ class MiniExpCompiler:
       return pattern + (string.from_runes extra_constants_)
 
   constant_pool_entry index/int -> int:
-    if index < pattern.size: return pattern[index]
+    if index < pattern.size: return pattern.at --raw index
     return extra_constants_[index - pattern.size]
 
   emit_ code/int arg1/int?=null arg2/int?=null -> none:
@@ -389,7 +389,7 @@ class MiniExpAnalysis:
   // tree) that it has registers it expects to be saved on the back edge.
   registers_to_save/List?/*<int>*/ ::= ?
 
-  static combine_registers left/List/*<int>*/ right/List/*<int>*/ -> List/*<int>*/:
+  static combine_registers left/List?/*<int>*/ right/List?/*<int>*/ -> List?/*<int>*/:
     if right == null or right.is_empty:
       return left
     else if left == null or left.is_empty:
@@ -435,7 +435,7 @@ class MiniExpAnalysis:
     anchored = positive and body_analysis.anchored
     registers_to_save = body_analysis.registers_to_save
 
-  constructor.quantifier body_analysis/MiniExpAnalysis min/int max/int regs/List/*<int>*/:
+  constructor.quantifier body_analysis/MiniExpAnalysis min/int max/int? regs/List/*<int>*/:
     can_match_empty = min == 0 or body_analysis.can_match_empty
     fixed_length = (min == 1 and max == 1) ? body_analysis.fixed_length : null
     anchored = min > 0 and body_analysis.anchored
@@ -650,14 +650,14 @@ class LookAhead extends Assertion:
     return MiniExpAnalysis.lookahead body_analysis positive_
 
 class Quantifier extends MiniExpAst:
-  min_ /int ::= ?
-  max_ /int ::= ?
+  min_ /int? ::= ?
+  max_ /int? ::= ?
   greedy_ /bool ::= ?
   body_/MiniExpAst ::= ?
   counter_register_/int := -1
   start_of_match_register_/int? := null  // Implements 21.2.2.5.1 note 4.
-  min_register_/int := -1
-  max_register_/int := -1
+  min_register_/int? := null
+  max_register_/int? := null
   subtree_registers_that_need_saving_/List?/*<int>*/ := null
   optimized_greedy_register_/int? := null
   save_position_register_/int? := null
@@ -673,8 +673,8 @@ class Quantifier extends MiniExpAst:
       compiler/MiniExpCompiler:
     if counter_check_:
       counter_register_ = compiler.allocate_working_register
-      min_register_ = compiler.allocate_constant_register min_
-      max_register_ = compiler.allocate_constant_register max_
+      min_register_ = (min_check_ min_) ? (compiler.allocate_constant_register min_) : null
+      max_register_ = (max_check_ max_) ? (compiler.allocate_constant_register max_) : null
 
   // We fall through to the top of this, when it is time to match the body of
   // the quantifier.  If the body matches successfully, we should go to
@@ -698,7 +698,7 @@ class Quantifier extends MiniExpAst:
 
     if counter_check_:
       compiler.add_to_register counter_register_ 1
-      if max_check_:
+      if max_check_ max_:
         compiler.backtrack_if_greater counter_register_ max_register_
 
     compiler.generate body_ on_body_success
@@ -789,7 +789,7 @@ class Quantifier extends MiniExpAst:
     if greedy_:
       generate_common compiler on_body_success
 
-      if min_check_:
+      if min_check_ min_:
         compiler.goto_if_greater_equal counter_register_ min_register_ on_success
         compiler.backtrack
       else:
@@ -798,7 +798,7 @@ class Quantifier extends MiniExpAst:
       // Non-greedy.
       try_body := MiniExpLabel
 
-      if min_check_:
+      if min_check_ min_:
         // If there's a minimum and we haven't reached it we should not try to
         // run the continuation, but go straight to the body_.
         // TODO(erikcorry): if we had a goto_if_less we could save instructions
@@ -818,7 +818,7 @@ class Quantifier extends MiniExpAst:
 
     if body_can_match_empty_:
       compiler.bind check_empty_match_label
-      if min_check_:
+      if min_check_ min_:
         compiler.goto_if_greater_equal min_register_ counter_register_ body_matched
       compiler.backtrack_if_equal start_of_match_register_ CURRENT_POSITION
       compiler.goto body_matched
@@ -837,11 +837,11 @@ class Quantifier extends MiniExpAst:
     my_regs/List/*<int>*/ := [counter_register_, optimized_greedy_register_, save_position_register_].filter: it != null
     return MiniExpAnalysis.quantifier body_analysis min_ max_ my_regs
 
-  max_check_ -> bool: return max_ != 1 and max_ != null
+  static max_check_ max -> bool: return max != 1 and max != null
 
-  min_check_ -> bool: return min_ != 0
+  static min_check_ min -> bool: return min != 0
 
-  counter_check_ -> bool: return max_check_ or min_check_
+  counter_check_ -> bool: return (max_check_ max_) or (min_check_ min_)
 
   body_can_match_empty_ -> bool: return start_of_match_register_ != null
 
@@ -1106,13 +1106,17 @@ class MiniExpMatch implements Match:
 
 interface RegExp:
   pattern -> string
-  is_multiline -> bool
-  is_case_sensitive -> bool
+  multiline -> bool
+  case_sensitive -> bool
   match_as_prefix a/string a1/int -> Match
   first_matching a/string -> Match
   has_matching a/string -> bool
   string_matching a/string -> string?
   all_matches subject/string start/int [block] -> bool
+  trace -> none
+
+  constructor pattern/string --multiline/bool --case_sensitive/bool:
+    return MiniExp_ pattern multiline case_sensitive
 
 class MiniExp_ implements RegExp:
   byte_codes_/List?/*<int>*/ := null
@@ -1121,12 +1125,16 @@ class MiniExp_ implements RegExp:
   sticky_entry_point_/int? := null
   constant_pool_/string? := null
   pattern /string ::= ?
-  is_multiline /bool ::= ?
-  is_case_sensitive /bool ::= ?
+  multiline /bool ::= ?
+  case_sensitive /bool ::= ?
+  trace_ /bool := false
 
-  constructor .pattern/string .is_multiline .is_case_sensitive:
-    compiler := MiniExpCompiler pattern is_case_sensitive
-    parser := MiniExpParser compiler pattern is_multiline
+  trace -> none:
+    trace_ = true
+
+  constructor .pattern .multiline .case_sensitive:
+    compiler := MiniExpCompiler pattern case_sensitive
+    parser := MiniExpParser compiler pattern multiline
     ast/MiniExpAst := parser.parse
     generate_code_ compiler ast pattern
 
@@ -1165,7 +1173,7 @@ class MiniExp_ implements RegExp:
 
   match_ a/string start_position/int start_program_counter/int -> Match?:
     registers/List/*<int>*/ := initial_register_values_.copy
-    interpreter := MiniExpInterpreter byte_codes_ constant_pool_ registers
+    interpreter := MiniExpInterpreter byte_codes_ constant_pool_ registers trace_
     if not interpreter.interpret a start_position start_program_counter:
       return null
     return MiniExpMatch this a registers first_capture_register_
@@ -1249,7 +1257,7 @@ class MiniExpParser:
   // to handle escapes that are not literally present in the regexp input.
   compiler_ /MiniExpCompiler ::= ?
   source_ /string ::= ?
-  is_multi_line_ /bool ::= ?
+  multiline_ /bool ::= ?
 
   capture_count_ /int := 0
   constant_pool_ /string := ""
@@ -1266,7 +1274,7 @@ class MiniExpParser:
   minimum_repeats_/int? := null
   maximum_repeats_/int? := null
 
-  constructor .compiler_ .source_ .is_multi_line_:
+  constructor .compiler_ .source_ .multiline_:
 
   parse -> MiniExpAst:
     get_token
@@ -1274,7 +1282,7 @@ class MiniExpParser:
     expect_token NONE
     return ast
 
-  at_ position_/int -> int: return source_[position_]
+  at_ position_/int -> int: return source_.at --raw position_
 
   has_ position_/int -> bool: return source_.size > position_
 
@@ -1302,9 +1310,9 @@ class MiniExpParser:
 
   try_parse_assertion -> MiniExpAst?:
     if accept_token HAT:
-      return is_multi_line_ ? AtBeginningOfLine : AtStart
+      return multiline_ ? AtBeginningOfLine : AtStart
     if accept_token DOLLAR:
-      return is_multi_line_ ? AtEndOfLine : AtEnd
+      return multiline_ ? AtEndOfLine : AtEnd
     if accept_token WORD_BOUNDARY: return WordBoundary true
     if accept_token NOT_WORD_BOUNDARY: return WordBoundary false
     lookahead_ast/MiniExpAst? := null
@@ -1324,7 +1332,7 @@ class MiniExpParser:
     return null
 
   parse_term -> MiniExpAst:
-    ast/MiniExpAst := try_parse_assertion
+    ast/MiniExpAst? := try_parse_assertion
     if ast == null:
       ast = parse_atom
       if peek_token QUANT:
@@ -1652,7 +1660,7 @@ class MiniExpParser:
       if not has_ position_: return b.to_string
       code := at_ position_
       if code >= '0' and code <= '9':
-        b.put_byte code
+        b.write_byte code
         position_++
       else:
         return b.to_string
@@ -1765,8 +1773,9 @@ class MiniExpInterpreter:
   byte_codes_/List/*<int>*/ ::= ?
   constant_pool_ /string ::= ?
   registers_/List/*<int>*/ ::= ?
+  trace_/bool
 
-  constructor .byte_codes_ .constant_pool_ .registers_:
+  constructor .byte_codes_ .constant_pool_ .registers_ .trace_:
 
   stack/List/*<int>*/ := []
   stack_pointer/int := 0
@@ -1776,6 +1785,9 @@ class MiniExpInterpreter:
     registers_[CURRENT_POSITION] = start_position
     while true:
       byte_code := byte_codes_[program_counter]
+      if trace_:
+        print "\"$subject\" $program_counter: $BYTE_CODE_NAMES[byte_code * 3]"
+        print (" " * (registers_[CURRENT_POSITION] + 1)) + "^"
       program_counter++
       // TODO: Faster implementation.
       if byte_code == GOTO:
@@ -1890,9 +1902,10 @@ class MiniExpInterpreter:
       else if byte_code == BACKTRACK:
         registers_[CURRENT_POSITION] = stack[--stack_pointer]
         program_counter = stack[--stack_pointer]
-        return true
       else if byte_code == FAIL:
         return false
+      else if byte_code == SUCCEED:
+        return true
       else:
         assert: false
 
