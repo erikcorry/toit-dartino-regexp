@@ -8,6 +8,7 @@ import string_utils.regexp
 main:
   foo_bar
   simple
+  newline
   utf
 
 foo_bar -> none:
@@ -44,6 +45,17 @@ simple -> none:
     vectors[3].do: | should_match |
       expect_not
           re.has_matching should_match
+
+newline -> none:
+  re := regexp.RegExp "foo.bar" --case_sensitive=true --multiline=false
+  expect (re.has_matching "foo bar")
+  expect_not (re.has_matching "foo\nbar")
+  expect_not (re.has_matching "foo\rbar")
+
+  re = regexp.RegExp "foo.bar" --case_sensitive=true --multiline=true
+  expect (re.has_matching "foo bar")
+  expect (re.has_matching "foo\nbar")
+  expect (re.has_matching "foo\rbar")
 
 utf -> none:
   re := regexp.RegExp "foo.+bar" --case_sensitive=true --multiline=false

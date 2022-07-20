@@ -479,6 +479,9 @@ abstract class MiniExpAst:
   // Label is bound at the entry point for the AST tree.
   label ::= MiniExpLabel
 
+  utf_expand -> MiniExpAst:
+    return this
+
 class Disjunction extends MiniExpAst:
   left_/MiniExpAst ::= ?
   right_/MiniExpAst ::= ?
@@ -496,6 +499,12 @@ class Disjunction extends MiniExpAst:
     return MiniExpAnalysis.orr
         left_.analyze compiler
         right_.analyze compiler
+
+  utf_expand -> Disjunction
+    l := left_.utf_expand
+    r := right_.utf_expand
+    if l == left_ and r == right_: return this
+    return Disjunction l r
 
 class EmptyAlternative extends MiniExpAst:
   generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
@@ -518,6 +527,12 @@ class Alternative extends MiniExpAst:
     return MiniExpAnalysis.andd
         left_.analyze compiler
         right_.analyze compiler
+
+  utf_expand -> Alternative
+    l := left_.utf_expand
+    r := right_.utf_expand
+    if l == left_ and r == right_: return this
+    return Alternative l r
 
 abstract class Assertion extends MiniExpAst:
   analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
@@ -601,6 +616,8 @@ class LookAhead extends Assertion:
     saved_stack_pointer_register_ = compiler.allocate_working_register
     saved_position_ = compiler.allocate_working_register
 
+  constructor.private .positive_ .body_ .saved_stack_pointer_register_ .saved_position_:
+
   generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
     // Lookahead.  Even if the subexpression succeeds, the current position is
     // reset, and the backtracking stack is unwound so that we can never
@@ -649,6 +666,11 @@ class LookAhead extends Assertion:
     subtree_registers_ = body_analysis.registers_to_save
     return MiniExpAnalysis.lookahead body_analysis positive_
 
+  utf_expand -> LookAhead
+    b := body_.utf_expand
+    if b == body_: return this
+    return LookAhead positive_ b saved_stack_pointer_register_ saved_position_
+
 class Quantifier extends MiniExpAst:
   min_ /int? ::= ?
   max_ /int? ::= ?
@@ -675,6 +697,20 @@ class Quantifier extends MiniExpAst:
       counter_register_ = compiler.allocate_working_register
       min_register_ = (min_check_ min_) ? (compiler.allocate_constant_register min_) : null
       max_register_ = (max_check_ max_) ? (compiler.allocate_constant_register max_) : null
+
+  constructor.private
+      .min_
+      .max_
+      .greedy_
+      .body_
+      .counter_register_
+      .start_of_match_register_
+      .min_register_
+      .max_register_
+      .subtree_registers_that_need_saving_
+      .optimized_greedy_register_
+      .save_position_register_
+      .body_length_:
 
   // We fall through to the top of this, when it is time to match the body of
   // the quantifier.  If the body matches successfully, we should go to
@@ -848,6 +884,23 @@ class Quantifier extends MiniExpAst:
   save_and_restore_registers_:
     return subtree_registers_that_need_saving_ != null and
            not subtree_registers_that_need_saving_.is_empty
+
+  utf_expand -> Quantifier
+    b := body_.utf_expand
+    if b == body_: return this
+    return Quantifier.private
+        min_
+        max_
+        greedy_
+        body_
+        counter_register_
+        start_of_match_register_
+        min_register_
+        max_register_
+        subtree_registers_that_need_saving_
+        optimized_greedy_register_
+        save_position_register_
+        body_length_
 
 class Atom extends MiniExpAst:
   constant_index_ /int ::= ?
@@ -1280,11 +1333,12 @@ class MiniExpParser:
     get_token
     ast/MiniExpAst := parse_disjunction
     expect_token NONE
+    ast = utf_expand ast
     return ast
 
-  at_ position_/int -> int: return source_.at --raw position_
+  at_ position/int -> int: return source_.[position]
 
-  has_ position_/int -> bool: return source_.size > position_
+  has_ position/int -> bool: return source_.size > position
 
   error message/string -> none:
     throw
@@ -1348,9 +1402,10 @@ class MiniExpParser:
       return result
     if accept_token DOT:
       ast := CharClass false  // Negative char class.
-      ast.add '\n' '\n'
-      ast.add '\r' '\r'
-      ast.add CHAR_CODE_LINE_SEPARATOR CHAR_CODE_PARAGRAPH_SEPARATOR
+      if not multiline_:
+        ast.add '\n' '\n'
+        ast.add '\r' '\r'
+        ast.add CHAR_CODE_LINE_SEPARATOR CHAR_CODE_PARAGRAPH_SEPARATOR
       return ast
 
     if peek_token BACK_REFERENCE:
@@ -1404,7 +1459,7 @@ class MiniExpParser:
   parse_character_class -> MiniExpAst:
     char_class/CharClass := ?
 
-    if (has_ position_) and (at_ position_) == '^':
+    if has_ position_ and (at_ position_) == '^':
       position_++
       char_class = CharClass false
     else:
@@ -1412,18 +1467,20 @@ class MiniExpParser:
 
     add_char_code := : | code |
       if code < 0:
-        char_class.add_special(at_(-code + 1))
+        char_class.add_special (at_ -code + 1)
       else:
         char_class.add code code
 
     while has_ position_:
       code/int := at_ position_
+
       degenerate_range := false
       if code == ']':
         // End of character class.  This reads the terminating square bracket.
         get_token
         break
       // Single character or escape code representing a single character.
+      // This also advanced position_.
       code = read_character_class_code_
 
       // Check if there are at least 2 more characters and the next is a dash.
@@ -1455,7 +1512,7 @@ class MiniExpParser:
   read_character_class_code_ -> int:
     code/int := at_ position_
     if code != '\\':
-      position_++
+      position_ += utf_8_bytes code
       return code
     if not has_ position_ + 1: error "Unexpected end of regexp"
     code2/int := at_ position_ + 1
@@ -1468,7 +1525,7 @@ class MiniExpParser:
       // For web compatibility, the set of characters that can follow \c inside
       // a character class is different from the a-z_a-Z that are allowed outside
       // a character class.
-      if has_(position_ + 2) and is_backslash_ccharacter(at_(position_ + 2)):
+      if has_ position_ + 2 and is_backslash_c_character (at_ position_ + 2):
         position_ += 3
         return at_(position_ - 1) % 32
       // This makes little sense, but for web compatibility, \c followed by an
@@ -1479,7 +1536,7 @@ class MiniExpParser:
     if '0' <= code2 and code2 <= '9':
       position_++
       return lex_integer 8 0x100
-    position_ += 2
+    position_ += 1 + (utf_8_bytes code2)
     if code2 == 'u':
       code = lex_hex 4
     else if code2 == 'x':
@@ -1584,11 +1641,11 @@ class MiniExpParser:
       lex_left_parenthesis
     else if token == QUANT:
       lex_quantifier
-    position_++
+    position_ += utf_8_bytes code
 
   // This may be a bug in Irregexp, but there are tests for it: \c _and \c0
   // work like \cc which means Control-C.  But only in character classes.
-  static is_backslash_ccharacter code/int -> bool:
+  static is_backslash_c_character code/int -> bool:
     if is_ascii_letter code: return true
     if '0' <= code <= '9': return true
     return code == '_'
@@ -1633,7 +1690,7 @@ class MiniExpParser:
     else:
       last_token_ = OTHER
       last_token_index_ = position_ + 1
-      position_ += 2
+      position_ += 1 + (utf_8_bytes next_code)
 
   lex_hex chars/int -> int:
     if not has_ position_ + chars - 1: return -1
