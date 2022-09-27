@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE.md file.
 
 import bytes show Buffer
-import .case
+import case
 
 class MiniExpLabel:
   // Initially points to -1 to indicate the label is neither linked (used) nor
@@ -165,15 +165,36 @@ class MiniExpCompiler:
     flush_pending_goto
     return codes_
 
-  constant_pool -> string:
+  constant_pool -> ByteArray:
     if extra_constants_.is_empty:
-      return pattern
+      return pattern.to_byte_array
     else:
-      return pattern + (string.from_runes extra_constants_)
+      byte_array := ByteArray extra_constants_.size: extra_constants_[it]
+      return pattern.to_byte_array + byte_array
 
+  // Returns the rune for the constant pool object at the given index.
   constant_pool_entry index/int -> int:
+    if index < pattern.size: return pattern[index]
+    first_byte := extra_constants_[index - pattern.size]
+    if first_byte < 0x80: return first_byte
+    byte_count := UTF_FIRST_CHAR_TABLE_[first_byte >> 4]
+    result := first_byte & 0x1f
+    if byte_count == 4: result &= 7
+    (byte_count - 1).repeat:
+      result <<= 6
+      result |= extra_constants_[index + it] & 0x3f
+    return result
+
+  constant_pool_byte index/int -> int:
     if index < pattern.size: return pattern.at --raw index
     return extra_constants_[index - pattern.size]
+
+  // Indexed by the top nibble of a UTF-8 byte this tells you how many bytes
+  // long the UTF-8 sequence is.
+  static UTF_FIRST_CHAR_TABLE_ ::= [
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 2, 2, 3, 4,
+  ]
 
   emit_ code/int arg1/int?=null arg2/int?=null -> none:
     flush_pending_goto
@@ -259,9 +280,15 @@ class MiniExpCompiler:
     if raw_register_number >= 0: return raw_register_number
     return -(raw_register_number + 1) + first_capture_register
 
-  add_to_constant_pool code_unit/int -> int:
-    extra_constants_.add code_unit
-    return pattern.size + extra_constants_.size - 1
+  add_to_constant_pool rune/int -> int:
+    result := pattern.size + extra_constants_.size
+    if rune < 0x80:
+      extra_constants_.add rune
+      return result
+    str := string.from_runes [rune]
+    str.size.repeat:
+      extra_constants_.add (str.at --raw it)
+    return result
 
   push_backtrack label/MiniExpLabel -> none:
     emit_ PUSH_BACKTRACK
@@ -479,6 +506,9 @@ abstract class MiniExpAst:
   // Label is bound at the entry point for the AST tree.
   label ::= MiniExpLabel
 
+  case_expand compiler/MiniExpCompiler -> MiniExpAst:
+    return this
+
 class Disjunction extends MiniExpAst:
   left_/MiniExpAst ::= ?
   right_/MiniExpAst ::= ?
@@ -496,6 +526,12 @@ class Disjunction extends MiniExpAst:
     return MiniExpAnalysis.orr
         left_.analyze compiler
         right_.analyze compiler
+
+  case_expand compiler/MiniExpCompiler -> Disjunction:
+    l := left_.case_expand compiler
+    r := right_.case_expand compiler
+    if l == left_ and r == right_: return this
+    return Disjunction l r
 
 class EmptyAlternative extends MiniExpAst:
   generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
@@ -518,6 +554,12 @@ class Alternative extends MiniExpAst:
     return MiniExpAnalysis.andd
         left_.analyze compiler
         right_.analyze compiler
+
+  case_expand compiler/MiniExpCompiler -> Alternative:
+    l := left_.case_expand compiler
+    r := right_.case_expand compiler
+    if l == left_ and r == right_: return this
+    return Alternative l r
 
 abstract class Assertion extends MiniExpAst:
   analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
@@ -601,6 +643,8 @@ class LookAhead extends Assertion:
     saved_stack_pointer_register_ = compiler.allocate_working_register
     saved_position_ = compiler.allocate_working_register
 
+  constructor.private .positive_ .body_ .saved_stack_pointer_register_ .saved_position_:
+
   generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
     // Lookahead.  Even if the subexpression succeeds, the current position is
     // reset, and the backtracking stack is unwound so that we can never
@@ -649,6 +693,11 @@ class LookAhead extends Assertion:
     subtree_registers_ = body_analysis.registers_to_save
     return MiniExpAnalysis.lookahead body_analysis positive_
 
+  case_expand compiler/MiniExpCompiler -> LookAhead:
+    b := body_.case_expand compiler
+    if b == body_: return this
+    return LookAhead.private positive_ b saved_stack_pointer_register_ saved_position_
+
 class Quantifier extends MiniExpAst:
   min_ /int? ::= ?
   max_ /int? ::= ?
@@ -666,15 +715,45 @@ class Quantifier extends MiniExpAst:
   is_optimized_greedy_ -> bool: return optimized_greedy_register_ != null
 
   constructor
-      .min_
-      .max_
-      .greedy_
-      .body_
-      compiler/MiniExpCompiler:
+      --min /int?
+      --max /int?
+      --greedy /bool
+      --body /MiniExpAst
+      --compiler /MiniExpCompiler:
+    min_ = min
+    max_ = max
+    greedy_ = greedy
+    body_ = body
     if counter_check_:
       counter_register_ = compiler.allocate_working_register
       min_register_ = (min_check_ min_) ? (compiler.allocate_constant_register min_) : null
       max_register_ = (max_check_ max_) ? (compiler.allocate_constant_register max_) : null
+
+  constructor.private
+      --min /int?
+      --max /int?
+      --greedy /bool
+      --body /MiniExpAst
+      --counter_register /int
+      --start_of_match_register /int?
+      --min_register /int?
+      --max_register /int?
+      --subtree_registers_that_need_saving /List?
+      --optimized_greedy_register /int?
+      --save_position_register /int?
+      --body_length /int?:
+    min_ = min
+    max_ = max
+    greedy_ = greedy
+    body_ = body
+    counter_register_ = counter_register
+    start_of_match_register_ = start_of_match_register
+    min_register_ = min_register
+    max_register_ = max_register
+    subtree_registers_that_need_saving_ = subtree_registers_that_need_saving
+    optimized_greedy_register_ = optimized_greedy_register
+    save_position_register_ = save_position_register
+    body_length_ = body_length
 
   // We fall through to the top of this, when it is time to match the body of
   // the quantifier.  If the body matches successfully, we should go to
@@ -849,28 +928,73 @@ class Quantifier extends MiniExpAst:
     return subtree_registers_that_need_saving_ != null and
            not subtree_registers_that_need_saving_.is_empty
 
+  case_expand compiler/MiniExpCompiler -> Quantifier:
+    b := body_.case_expand compiler
+    if b == body_: return this
+    return Quantifier.private
+        --min=min_
+        --max=max_
+        --greedy=greedy_
+        --body=b
+        --counter_register=counter_register_
+        --start_of_match_register=start_of_match_register_
+        --min_register=min_register_
+        --max_register=max_register_
+        --subtree_registers_that_need_saving=subtree_registers_that_need_saving_
+        --optimized_greedy_register=optimized_greedy_register_
+        --save_position_register=save_position_register_
+        --body_length=body_length_
+
 class Atom extends MiniExpAst:
   constant_index_ /int ::= ?
 
   constructor .constant_index_:
 
   generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
+    code_unit/int := compiler.constant_pool_byte constant_index_
     compiler.backtrack_if_equal CURRENT_POSITION STRING_LENGTH
-    match/MiniExpLabel? := null
-    char_code/int := compiler.constant_pool_entry constant_index_
-    if not compiler.case_sensitive:
-      // TODO: Non-ASCII case insensitivity.
-      if 'a' <= char_code <= 'z' or 'A' <= char_code <= 'Z':
-        match = MiniExpLabel
-        compiler.goto_if_matches (char_code ^ 0x20) match
     compiler.backtrack_if_no_match constant_index_
-    if match != null: compiler.bind match
     compiler.add_to_register CURRENT_POSITION 1
     compiler.goto on_success
+
+  case_expand compiler/MiniExpCompiler -> MiniExpAst:
+    if compiler.case_sensitive:
+      return utf_expand compiler
+    char_code/int := compiler.constant_pool_entry constant_index_
+    equivalence := case.reg_exp_equivalence_class char_code
+    if not equivalence or equivalence.size == 1:
+      return utf_expand compiler
+    // Need to expand to multiple characters.
+    result := Disjunction
+        (Atom (compiler.add_to_constant_pool equivalence[0])).utf_expand compiler
+        (Atom (compiler.add_to_constant_pool equivalence[1])).utf_expand compiler
+    if equivalence.size > 2:
+      result = Disjunction
+          result
+          (Atom (compiler.add_to_constant_pool equivalence[2])).utf_expand compiler
+    assert: equivalence <= 3
+    return result
+
+  utf_expand compiler/MiniExpCompiler -> MiniExpAst:
+    byte_count := MiniExpCompiler.UTF_FIRST_CHAR_TABLE_[(compiler.constant_pool_byte constant_index_) >> 4]
+    if byte_count == 1: return this
+    result := Alternative
+        Atom constant_index_
+        Atom constant_index_ + 1
+    if byte_count >= 3:
+      result = Alternative
+          result
+          Atom constant_index_ + 2
+    if byte_count == 4:
+      result = Alternative
+          result
+          Atom constant_index_ + 3
+    return result
 
   analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
     return MiniExpAnalysis.atom
 
+// TODO: Not yet Unicode-aware.
 class CharClass extends MiniExpAst:
   ranges_ /List ::= []
   positive_ /bool ::= ?
@@ -1123,7 +1247,7 @@ class MiniExp_ implements RegExp:
   initial_register_values_/List?/*<int>*/ := null
   first_capture_register_/int? := null
   sticky_entry_point_/int? := null
-  constant_pool_/string? := null
+  constant_pool_/ByteArray? := null
   pattern /string ::= ?
   multiline /bool ::= ?
   case_sensitive /bool ::= ?
@@ -1252,15 +1376,11 @@ NEGATIVE_LOOK_AHEAD ::= 21
 OTHER ::= 22
 
 class MiniExpParser:
-  // The constant pool is used to look up character data when the regexp is
-  // running.  It consists of the regexp source with some characters appended
-  // to handle escapes that are not literally present in the regexp input.
   compiler_ /MiniExpCompiler ::= ?
   source_ /string ::= ?
   multiline_ /bool ::= ?
 
   capture_count_ /int := 0
-  constant_pool_ /string := ""
 
   // State of the parser and lexer.
   position_/int := 0  // Location in source.
@@ -1280,11 +1400,12 @@ class MiniExpParser:
     get_token
     ast/MiniExpAst := parse_disjunction
     expect_token NONE
+    ast = ast.case_expand compiler_
     return ast
 
-  at_ position_/int -> int: return source_.at --raw position_
+  at_ position/int -> int: return source_[position]
 
-  has_ position_/int -> bool: return source_.size > position_
+  has_ position/int -> bool: return source_.size > position
 
   error message/string -> none:
     throw
@@ -1325,7 +1446,7 @@ class MiniExpParser:
       // The normal syntax does not allow a quantifier here, but the web
       // compatible one does.  Slightly nasty hack for compatibility:
       if peek_token QUANT:
-        quant/MiniExpAst := Quantifier minimum_repeats_ maximum_repeats_ last_was_greedy_ lookahead_ast compiler_
+        quant/MiniExpAst := Quantifier --min=minimum_repeats_ --max=maximum_repeats_ --greedy=last_was_greedy_ --body=lookahead_ast --compiler=compiler_
         expect_token QUANT
         return quant
       return lookahead_ast
@@ -1336,7 +1457,7 @@ class MiniExpParser:
     if ast == null:
       ast = parse_atom
       if peek_token QUANT:
-        quant/MiniExpAst := Quantifier minimum_repeats_ maximum_repeats_ last_was_greedy_ ast compiler_
+        quant/MiniExpAst := Quantifier --min=minimum_repeats_ --max=maximum_repeats_ --greedy=last_was_greedy_ --body=ast --compiler=compiler_
         expect_token QUANT
         return quant
     return ast
@@ -1348,9 +1469,10 @@ class MiniExpParser:
       return result
     if accept_token DOT:
       ast := CharClass false  // Negative char class.
-      ast.add '\n' '\n'
-      ast.add '\r' '\r'
-      ast.add CHAR_CODE_LINE_SEPARATOR CHAR_CODE_PARAGRAPH_SEPARATOR
+      if not multiline_:
+        ast.add '\n' '\n'
+        ast.add '\r' '\r'
+        ast.add CHAR_CODE_LINE_SEPARATOR CHAR_CODE_PARAGRAPH_SEPARATOR
       return ast
 
     if peek_token BACK_REFERENCE:
@@ -1404,7 +1526,7 @@ class MiniExpParser:
   parse_character_class -> MiniExpAst:
     char_class/CharClass := ?
 
-    if (has_ position_) and (at_ position_) == '^':
+    if has_ position_ and (at_ position_) == '^':
       position_++
       char_class = CharClass false
     else:
@@ -1412,18 +1534,20 @@ class MiniExpParser:
 
     add_char_code := : | code |
       if code < 0:
-        char_class.add_special(at_(-code + 1))
+        char_class.add_special (at_ -code + 1)
       else:
         char_class.add code code
 
     while has_ position_:
       code/int := at_ position_
+
       degenerate_range := false
       if code == ']':
         // End of character class.  This reads the terminating square bracket.
         get_token
         break
       // Single character or escape code representing a single character.
+      // This also advanced position_.
       code = read_character_class_code_
 
       // Check if there are at least 2 more characters and the next is a dash.
@@ -1455,7 +1579,7 @@ class MiniExpParser:
   read_character_class_code_ -> int:
     code/int := at_ position_
     if code != '\\':
-      position_++
+      position_ += utf_8_bytes code
       return code
     if not has_ position_ + 1: error "Unexpected end of regexp"
     code2/int := at_ position_ + 1
@@ -1468,7 +1592,7 @@ class MiniExpParser:
       // For web compatibility, the set of characters that can follow \c inside
       // a character class is different from the a-z_a-Z that are allowed outside
       // a character class.
-      if has_(position_ + 2) and is_backslash_ccharacter(at_(position_ + 2)):
+      if has_ position_ + 2 and is_backslash_c_character (at_ position_ + 2):
         position_ += 3
         return at_(position_ - 1) % 32
       // This makes little sense, but for web compatibility, \c followed by an
@@ -1479,12 +1603,12 @@ class MiniExpParser:
     if '0' <= code2 and code2 <= '9':
       position_++
       return lex_integer 8 0x100
-    position_ += 2
+    position_ += 1 + (utf_8_bytes code2)
     if code2 == 'u':
       code = lex_hex 4
     else if code2 == 'x':
       code = lex_hex 2
-    else if CONTROL_CHARACTERS.contains_key(code2):
+    else if CONTROL_CHARACTERS.contains code2:
       code = CONTROL_CHARACTERS[code2]
     else:
       code = code2
@@ -1584,11 +1708,11 @@ class MiniExpParser:
       lex_left_parenthesis
     else if token == QUANT:
       lex_quantifier
-    position_++
+    position_ += utf_8_bytes code
 
   // This may be a bug in Irregexp, but there are tests for it: \c _and \c0
   // work like \cc which means Control-C.  But only in character classes.
-  static is_backslash_ccharacter code/int -> bool:
+  static is_backslash_c_character code/int -> bool:
     if is_ascii_letter code: return true
     if '0' <= code <= '9': return true
     return code == '_'
@@ -1600,10 +1724,10 @@ class MiniExpParser:
   lex_backslash -> none:
     if not has_(position_ + 1): error "\\ at end of pattern"
     next_code/int := at_ position_ + 1
-    if ESCAPES.contains_key next_code:
+    if ESCAPES.contains next_code:
       position_ += 2
       last_token_ = ESCAPES[next_code]
-    else if CONTROL_CHARACTERS.contains_key next_code:
+    else if CONTROL_CHARACTERS.contains next_code:
       position_ += 2
       last_token_ = OTHER
       last_token_index_ =
@@ -1633,7 +1757,7 @@ class MiniExpParser:
     else:
       last_token_ = OTHER
       last_token_index_ = position_ + 1
-      position_ += 2
+      position_ += 1 + (utf_8_bytes next_code)
 
   lex_hex chars/int -> int:
     if not has_ position_ + chars - 1: return -1
@@ -1771,7 +1895,7 @@ disassemble_single_instruction codes/List/*<int>*/ i/int registers/List?/*<int>*
 
 class MiniExpInterpreter:
   byte_codes_/List/*<int>*/ ::= ?
-  constant_pool_ /string ::= ?
+  constant_pool_ /ByteArray ::= ?
   registers_/List/*<int>*/ ::= ?
   trace_/bool
 
@@ -1834,7 +1958,7 @@ class MiniExpInterpreter:
           program_counter = stack[--stack_pointer]
       else if byte_code == BACKTRACK_IF_NO_MATCH:
         if (subject.at --raw registers_[CURRENT_POSITION]) !=
-            (constant_pool_.at --raw byte_codes_[program_counter++]):
+            (constant_pool_[byte_codes_[program_counter++]]):
           registers_[CURRENT_POSITION] = stack[--stack_pointer]
           program_counter = stack[--stack_pointer]
       else if byte_code == BACKTRACK_IF_IN_RANGE:
@@ -1920,8 +2044,8 @@ class MiniExpInterpreter:
       x := subject.at --raw start + i
       y := subject.at --raw current_position + i
       if not case_sensitive:
-        x = reg_exp_canonicalize_ x
-        y = reg_exp_canonicalize_ y
+        x = case.reg_exp_canonicalize x
+        y = case.reg_exp_canonicalize y
       if x != y: return false
     registers_[CURRENT_POSITION] += length
     return true

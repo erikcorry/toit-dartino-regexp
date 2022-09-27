@@ -8,7 +8,9 @@ import string_utils.regexp
 main:
   foo_bar
   simple
+  newline
   utf
+  case
 
 foo_bar -> none:
   re := regexp.RegExp "foo.*bar" --case_sensitive=true --multiline=false
@@ -45,6 +47,17 @@ simple -> none:
       expect_not
           re.has_matching should_match
 
+newline -> none:
+  re := regexp.RegExp "foo.bar" --case_sensitive=true --multiline=false
+  expect (re.has_matching "foo bar")
+  expect_not (re.has_matching "foo\nbar")
+  expect_not (re.has_matching "foo\rbar")
+
+  re = regexp.RegExp "foo.bar" --case_sensitive=true --multiline=true
+  expect (re.has_matching "foo bar")
+  expect (re.has_matching "foo\nbar")
+  expect (re.has_matching "foo\rbar")
+
 utf -> none:
   re := regexp.RegExp "foo.+bar" --case_sensitive=true --multiline=false
   expect (re.has_matching "foo bar")
@@ -59,6 +72,30 @@ utf -> none:
   expect_not (re.has_matching "søe")
   expect (re.has_matching "sø")
 
+  re = regexp.RegExp "^sø*\$" --case_sensitive=true --multiline=false
+  expect_not (re.has_matching "")
+  expect (re.has_matching "s")
+  expect (re.has_matching "sø")
+  expect (re.has_matching "søø")
+  expect_not (re.has_matching "sæø")
+  expect_not (re.has_matching "søø.")
+
+  re = regexp.RegExp "^s€*\$" --case_sensitive=true --multiline=false
+  expect_not (re.has_matching "")
+  expect (re.has_matching "s")
+  expect (re.has_matching "s€")
+  expect (re.has_matching "s€€")
+  expect_not (re.has_matching "sæ€")
+  expect_not (re.has_matching "s€€.")
+
+  re = regexp.RegExp "^s☃*\$" --case_sensitive=true --multiline=false
+  expect_not (re.has_matching "")
+  expect (re.has_matching "s")
+  expect (re.has_matching "s☃")
+  expect (re.has_matching "s☃☃")
+  expect_not (re.has_matching "s€☃")
+  expect_not (re.has_matching "s☃☃.")
+
   re = regexp.RegExp "foo.bar" --case_sensitive=true --multiline=false
   expect (re.has_matching "foo bar")
   expect_not (re.has_matching "foobar")
@@ -67,3 +104,64 @@ utf -> none:
   //expect (re.has_matching "foo€bar")
   //expect (re.has_matching "foo☃bar")
   expect_not (re.has_matching "foo..bar")
+
+case -> none:
+  re := regexp.RegExp "foo.+bar" --case_sensitive=false --multiline=false
+  expect (re.has_matching "foo bar")
+  expect_not (re.has_matching "foobar")
+  expect (re.has_matching "Foo BaR")
+  expect_not (re.has_matching "Foo Bax")
+  expect_not (re.has_matching "FOOBAR")
+
+  re = regexp.RegExp "Søen" --case_sensitive=false --multiline=false
+  expect (re.has_matching "Søen")
+  expect (re.has_matching "søen")
+  expect (re.has_matching "SøEN")
+  expect (re.has_matching "SØEN")
+  expect (re.has_matching "sØen")
+  expect (re.has_matching "..sØen")
+  expect_not (re.has_matching "soen")
+  expect_not (re.has_matching "söen")
+
+  re = regexp.RegExp "Sø*en" --case_sensitive=false --multiline=false
+  expect (re.has_matching "Søen")
+  expect (re.has_matching "Søøøen")
+  expect (re.has_matching "søen")
+  expect (re.has_matching "SøEN")
+  expect (re.has_matching "SEN")
+  expect (re.has_matching "SøØøØøØøøØØEN")
+  expect (re.has_matching "sØen")
+  expect (re.has_matching "..sØen")
+  expect_not (re.has_matching "soen")
+  expect_not (re.has_matching "söen")
+
+  re = regexp.RegExp "Sø*en" --case_sensitive=false --multiline=false
+  expect (re.has_matching "Søen")
+  expect (re.has_matching "Søøøen")
+  expect (re.has_matching "søen")
+  expect (re.has_matching "SøEN")
+  expect (re.has_matching "SEN")
+  expect (re.has_matching "SøØøØøØøøØØEN")
+  expect (re.has_matching "sØen")
+  expect (re.has_matching "..sØen")
+  expect_not (re.has_matching "soen")
+  expect_not (re.has_matching "söen")
+
+  // Sigma test. 'Σ', 'ς', 'σ'
+  re = regexp.RegExp "Six Σ event" --case_sensitive=false --multiline=false
+  expect_not (re.has_matching "Søen")
+  expect_not (re.has_matching "Six . event")
+  expect_not (re.has_matching "Six .. event")
+  expect_not (re.has_matching "Six ... event")
+  expect (re.has_matching "six Σ event")
+  expect (re.has_matching "six ς event")
+  expect (re.has_matching "six σ event")
+
+  re = regexp.RegExp "Six Σ event" --case_sensitive=true --multiline=false
+  expect_not (re.has_matching "Søen")
+  expect_not (re.has_matching "Six . event")
+  expect_not (re.has_matching "Six .. event")
+  expect_not (re.has_matching "Six ... event")
+  expect (re.has_matching "Six Σ event")
+  expect_not (re.has_matching "Six ς event")
+  expect_not (re.has_matching "Six σ event")
