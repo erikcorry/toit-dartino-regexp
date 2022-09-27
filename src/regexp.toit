@@ -715,29 +715,45 @@ class Quantifier extends MiniExpAst:
   is_optimized_greedy_ -> bool: return optimized_greedy_register_ != null
 
   constructor
-      .min_
-      .max_
-      .greedy_
-      .body_
-      compiler/MiniExpCompiler:
+      --min /int?
+      --max /int?
+      --greedy /bool
+      --body /MiniExpAst
+      --compiler /MiniExpCompiler:
+    min_ = min
+    max_ = max
+    greedy_ = greedy
+    body_ = body
     if counter_check_:
       counter_register_ = compiler.allocate_working_register
       min_register_ = (min_check_ min_) ? (compiler.allocate_constant_register min_) : null
       max_register_ = (max_check_ max_) ? (compiler.allocate_constant_register max_) : null
 
   constructor.private
-      .min_
-      .max_
-      .greedy_
-      .body_
-      .counter_register_
-      .start_of_match_register_
-      .min_register_
-      .max_register_
-      .subtree_registers_that_need_saving_
-      .optimized_greedy_register_
-      .save_position_register_
-      .body_length_:
+      --min /int?
+      --max /int?
+      --greedy /bool
+      --body /MiniExpAst
+      --counter_register /int
+      --start_of_match_register /int?
+      --min_register /int?
+      --max_register /int?
+      --subtree_registers_that_need_saving /List?
+      --optimized_greedy_register /int?
+      --save_position_register /int?
+      --body_length /int?:
+    min_ = min
+    max_ = max
+    greedy_ = greedy
+    body_ = body
+    counter_register_ = counter_register
+    start_of_match_register_ = start_of_match_register
+    min_register_ = min_register
+    max_register_ = max_register
+    subtree_registers_that_need_saving_ = subtree_registers_that_need_saving
+    optimized_greedy_register_ = optimized_greedy_register
+    save_position_register_ = save_position_register
+    body_length_ = body_length
 
   // We fall through to the top of this, when it is time to match the body of
   // the quantifier.  If the body matches successfully, we should go to
@@ -916,18 +932,18 @@ class Quantifier extends MiniExpAst:
     b := body_.case_expand compiler
     if b == body_: return this
     return Quantifier.private
-        min_
-        max_
-        greedy_
-        b
-        counter_register_
-        start_of_match_register_
-        min_register_
-        max_register_
-        subtree_registers_that_need_saving_
-        optimized_greedy_register_
-        save_position_register_
-        body_length_
+        --min=min_
+        --max=max_
+        --greedy=greedy_
+        --body=b
+        --counter_register=counter_register_
+        --start_of_match_register=start_of_match_register_
+        --min_register=min_register_
+        --max_register=max_register_
+        --subtree_registers_that_need_saving=subtree_registers_that_need_saving_
+        --optimized_greedy_register=optimized_greedy_register_
+        --save_position_register=save_position_register_
+        --body_length=body_length_
 
 class Atom extends MiniExpAst:
   constant_index_ /int ::= ?
@@ -1430,7 +1446,7 @@ class MiniExpParser:
       // The normal syntax does not allow a quantifier here, but the web
       // compatible one does.  Slightly nasty hack for compatibility:
       if peek_token QUANT:
-        quant/MiniExpAst := Quantifier minimum_repeats_ maximum_repeats_ last_was_greedy_ lookahead_ast compiler_
+        quant/MiniExpAst := Quantifier --min=minimum_repeats_ --max=maximum_repeats_ --greedy=last_was_greedy_ --body=lookahead_ast --compiler=compiler_
         expect_token QUANT
         return quant
       return lookahead_ast
@@ -1441,7 +1457,7 @@ class MiniExpParser:
     if ast == null:
       ast = parse_atom
       if peek_token QUANT:
-        quant/MiniExpAst := Quantifier minimum_repeats_ maximum_repeats_ last_was_greedy_ ast compiler_
+        quant/MiniExpAst := Quantifier --min=minimum_repeats_ --max=maximum_repeats_ --greedy=last_was_greedy_ --body=ast --compiler=compiler_
         expect_token QUANT
         return quant
     return ast
