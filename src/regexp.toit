@@ -379,6 +379,8 @@ class MiniExpCompiler:
     emit_ GOTO_IF_UNICODE_IN_RANGE from to
     link label
 
+  // Adds a number of UTF-8 encoded runes to the current position, and stores
+  // the result in the given destination register.  Can also step backwards.
   advance_by_rune_width destination_register/int count/int -> none:
     emit_ ADVANCE_BY_RUNE_WIDTH destination_register count
 
@@ -1083,6 +1085,8 @@ class CharClass extends MiniExpAst:
           0xffff
 
   fix_ranges ranges/List/*<Range_>*/ case_sensitive/bool -> none:
+    // There's a lot of punctuation and no case-sensitive characters before the
+    // Unicode 'A' code point.
     if not case_sensitive and (ranges.any: it.to >= 'A'):
       old_size := ranges.size
       range_start := -1
@@ -1092,31 +1096,46 @@ class CharClass extends MiniExpAst:
         for j := range.from; j <= range.to; j++:
           equivalence := case.reg_exp_equivalence_class j
           if equivalence and equivalence.size != 1:
-            if range_start >= 0 and equivalence.size == 2 and equivalence.contains range_end + 1:
+            if range_start >= 0 and equivalence.size == 2 and equivalence.contains range_end + 1 and j != range_end:
+              // There's just one case-equivalent character and it's the one we
+              // were expecting.
               range_end++
             else:
               assert: equivalence.contains j
+              // Flush the existing range of equivalents that we were
+              // constructing.
               if range_start >= 0:
                 ranges.add (Range_ range_start range_end)
                 range_start = -1
               if equivalence.size > 2:
+                // If there are > 2 equivalents, just add them all to the list
+                // of ranges.
                 equivalence.do: | equivalent |
                   ranges.add (Range_ equivalent equivalent)
               else:
+                // Since there are two equivalents, and one of them is the
+                // character we already have in a range, start constructing a
+                // new range of equivalents.
                 equivalence.do: | equivalent |
                   if equivalent != j:
                     range_start = range_end = equivalent
+        // At the end, flush the equivalent range we were constructing.
         if range_start >= 0:
           ranges.add (Range_ range_start range_end)
           range_start = -1
 
+    // Even if there is no case-independence work to do we still want to
+    // consolidate ranges.
     ranges.sort --in_place: | a b | a.from - b.from
-    // Merge adjacent ranges.
+
+    // Now that they are sorted, check if it's worth merging
+    // adjacent/overlapping ranges.
     for i := 1; i < ranges.size; i++:
       if ranges[i - 1].to + 1 >= ranges[i].from:
         ranges = merge_adjacent_ranges_ ranges
         break
 
+  // Merge adjacent/overlapping ranges.
   merge_adjacent_ranges_ ranges/List -> List:
     last := ranges[0]
     new_ranges := [last]
