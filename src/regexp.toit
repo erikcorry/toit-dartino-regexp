@@ -819,7 +819,7 @@ class Quantifier extends MiniExpAst:
     compiler.copy_register optimized_greedy_register_ CURRENT_POSITION
     if min_ != 0:
       assert: min_ < 3 and body_length_ < 3
-      compiler.advance_by_rune_width optimized_greedy_register_ min_ * body_length_
+      compiler.advance_by_rune_width optimized_greedy_register_ (min_ * body_length_)
 
     // This backtrack doesn't trigger until the quantifier has eaten as much as
     // possible.  Unfortunately, whenever we backtrack in this simple system,
@@ -1084,39 +1084,51 @@ class CharClass extends MiniExpAst:
       add 'z' + 1
           0xffff
 
-  fix_ranges ranges/List/*<Range_>*/ case_sensitive/bool -> none:
+  fix_ranges ranges/List/*<Range_>*/ case_sensitive/bool -> List/*<Range_>*/:
     // There's a lot of punctuation and no case-sensitive characters before the
     // Unicode 'A' code point.
+    ranges = ranges.copy
     if not case_sensitive and (ranges.any: it.to >= 'A'):
       old_size := ranges.size
       range_start := -1
       range_end := -1
       for i := 0; i < old_size; i++:
         range := ranges[i]
+        // For each character, eg. in the range a-f, we need to find the
+        // equivalent characters, eg. A-F, and add them to the character class.
         for j := range.from; j <= range.to; j++:
-          equivalence := case.reg_exp_equivalence_class j
-          if equivalence and equivalence.size != 1:
-            if range_start >= 0 and equivalence.size == 2 and equivalence.contains range_end + 1 and j != range_end:
-              // There's just one case-equivalent character and it's the one we
-              // were expecting.
+          // Get the characters that are equivalent to the current one.
+          // For example, if j == 'A' we would expect to get ['a', 'A'] or
+          // ['A', 'a'].  A reply of null means there the character is only
+          // case-equivalent to itself.  There are never more than three
+          // case equivalents.
+          equivalents := case.reg_exp_equivalence_class j
+          if equivalents and equivalents.size != 1:
+            assert: equivalents.contains j
+            if range_start >= 0 and equivalents.size == 2 and equivalents.contains range_end + 1 and j != range_end + 1:
+              // There's just one case-equivalent character (other than j) and
+              // it's the one we were expecting, so we merely need to extend
+              // the range by one to cover the new character.
+              // (We exclude the theoretical case where j is identical to the
+              // range extension, because in that case we would not record the
+              // other equivalent character.)
               range_end++
             else:
-              assert: equivalence.contains j
               // Flush the existing range of equivalents that we were
               // constructing.
               if range_start >= 0:
                 ranges.add (Range_ range_start range_end)
                 range_start = -1
-              if equivalence.size > 2:
+              if equivalents.size > 2:
                 // If there are > 2 equivalents, just add them all to the list
                 // of ranges.
-                equivalence.do: | equivalent |
+                equivalents.do: | equivalent |
                   ranges.add (Range_ equivalent equivalent)
               else:
                 // Since there are two equivalents, and one of them is the
                 // character we already have in a range, start constructing a
                 // new range of equivalents.
-                equivalence.do: | equivalent |
+                equivalents.do: | equivalent |
                   if equivalent != j:
                     range_start = range_end = equivalent
         // At the end, flush the equivalent range we were constructing.
@@ -1135,6 +1147,8 @@ class CharClass extends MiniExpAst:
         ranges = merge_adjacent_ranges_ ranges
         break
 
+    return ranges
+
   // Merge adjacent/overlapping ranges.
   merge_adjacent_ranges_ ranges/List -> List:
     last := ranges[0]
@@ -1148,8 +1162,7 @@ class CharClass extends MiniExpAst:
     return new_ranges
 
   case_expand compiler/MiniExpCompiler -> MiniExpAst:
-    ranges := ranges_.copy
-    fix_ranges ranges compiler.case_sensitive
+    ranges := fix_ranges ranges_ compiler.case_sensitive
     return CharClass.private_ ranges positive_
 
   generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
