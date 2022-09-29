@@ -19,6 +19,9 @@ class MiniExpLabel:
   is_bound -> bool:
     return location_ >= 0
 
+  is_linked -> bool:
+    return location_ < NO_LOCATION
+
   bind codes/List/*<int>*/ -> none:
     assert: not is_bound
     l /int := codes.size
@@ -98,15 +101,17 @@ BACKTRACK_IF_NO_MATCH ::= 7  // constant-pool-offset
 BACKTRACK_IF_IN_RANGE ::= 8  // from to
 GOTO_IF_MATCH ::= 9  // char_code label
 GOTO_IF_IN_RANGE ::= 10  // from to label
-GOTO_EQ ::= 11 // reg reg label
-GOTO_GE ::= 12 // reg reg label
-GOTO_IF_WORD_CHARACTER ::= 13  // position-offset label
-ADD_TO_REGISTER ::= 14 // reg const
-COPY_REGISTER ::= 15 // dest-reg source-reg
-BACKTRACK_ON_BACK_REFERENCE ::= 16 // capture-reg
-BACKTRACK ::= 17
-SUCCEED ::= 18
-FAIL ::= 19
+GOTO_IF_UNICODE_IN_RANGE ::= 11  // from to label
+GOTO_EQ ::= 12 // reg reg label
+GOTO_GE ::= 13 // reg reg label
+GOTO_IF_WORD_CHARACTER ::= 14  // position-offset label
+ADD_TO_REGISTER ::= 15 // reg const
+ADVANCE_BY_RUNE_WIDTH ::= 16  // reg
+COPY_REGISTER ::= 17 // dest-reg source-reg
+BACKTRACK_ON_BACK_REFERENCE ::= 18 // capture-reg
+BACKTRACK ::= 19
+SUCCEED ::= 20
+FAIL ::= 21
 
 // Format is name, number of register arguments, number of other arguments.
 BYTE_CODE_NAMES ::= [
@@ -121,10 +126,12 @@ BYTE_CODE_NAMES ::= [
   "BACKTRACK_IF_IN_RANGE", 0, 2,
   "GOTO_IF_MATCH", 0, 2,
   "GOTO_IF_IN_RANGE", 0, 3,
+  "GOTO_IF_UNICODE_IN_RANGE", 0, 3,
   "GOTO_EQ", 2, 1,
   "GOTO_GE", 2, 1,
   "GOTO_IF_WORD_CHARACTER", 0, 2,
   "ADD_TO_REGISTER", 1, 1,
+  "ADVANCE_BY_RUNE_WIDTH", 1, 1,
   "COPY_REGISTER", 2, 0,
   "BACKTRACK_ON_BACK_REFERENCE", 1, 1,
   "BACKTRACK", 0, 0,
@@ -367,6 +374,15 @@ class MiniExpCompiler:
     else:
       emit_ GOTO_IF_IN_RANGE from to
       link label
+
+  goto_if_unicode_in_range from/int to/int label/MiniExpLabel -> none:
+    emit_ GOTO_IF_UNICODE_IN_RANGE from to
+    link label
+
+  // Adds a number of UTF-8 encoded runes to the current position, and stores
+  // the result in the given destination register.  Can also step backwards.
+  advance_by_rune_width destination_register/int count/int -> none:
+    emit_ ADVANCE_BY_RUNE_WIDTH destination_register count
 
   backtrack_if_not_at_word_boundary -> none:
     non_word_on_left := MiniExpLabel
@@ -643,7 +659,7 @@ class LookAhead extends Assertion:
     saved_stack_pointer_register_ = compiler.allocate_working_register
     saved_position_ = compiler.allocate_working_register
 
-  constructor.private .positive_ .body_ .saved_stack_pointer_register_ .saved_position_:
+  constructor.private_ .positive_ .body_ .saved_stack_pointer_register_ .saved_position_:
 
   generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
     // Lookahead.  Even if the subexpression succeeds, the current position is
@@ -696,7 +712,7 @@ class LookAhead extends Assertion:
   case_expand compiler/MiniExpCompiler -> LookAhead:
     b := body_.case_expand compiler
     if b == body_: return this
-    return LookAhead.private positive_ b saved_stack_pointer_register_ saved_position_
+    return LookAhead.private_ positive_ b saved_stack_pointer_register_ saved_position_
 
 class Quantifier extends MiniExpAst:
   min_ /int? ::= ?
@@ -729,7 +745,7 @@ class Quantifier extends MiniExpAst:
       min_register_ = (min_check_ min_) ? (compiler.allocate_constant_register min_) : null
       max_register_ = (max_check_ max_) ? (compiler.allocate_constant_register max_) : null
 
-  constructor.private
+  constructor.private_
       --min /int?
       --max /int?
       --greedy /bool
@@ -802,9 +818,8 @@ class Quantifier extends MiniExpAst:
     // unwound enough.
     compiler.copy_register optimized_greedy_register_ CURRENT_POSITION
     if min_ != 0:
-      compiler.add_to_register
-          optimized_greedy_register_
-          min_ * body_length_
+      assert: min_ < 3 and body_length_ < 3
+      compiler.advance_by_rune_width optimized_greedy_register_ (min_ * body_length_)
 
     // This backtrack doesn't trigger until the quantifier has eaten as much as
     // possible.  Unfortunately, whenever we backtrack in this simple system,
@@ -834,7 +849,7 @@ class Quantifier extends MiniExpAst:
     // The continuation of the regexp failed.  We backtrack the greedy
     // quantifier by one step and retry.
     compiler.bind continuation_failed
-    compiler.add_to_register CURRENT_POSITION -body_length_
+    compiler.advance_by_rune_width CURRENT_POSITION -body_length_
     // If we got back to where the quantifier started matching, then jump
     // to the continuation (we haven't pushed a backtrack, so if that fails, it
     // will backtrack further).
@@ -908,7 +923,8 @@ class Quantifier extends MiniExpAst:
     body_length_ = body_analysis.fixed_length
     if body_analysis.can_match_empty:
       start_of_match_register_ = compiler.allocate_working_register
-    else if max_ == null and greedy_ and body_length_ != null:
+    // Some limitations to prevent min * body_length being too high.
+    else if max_ == null and greedy_ and body_length_ != null and (min_ == null or min_ < 3) and (body_length_ < 3 or min_ == null or min_ == 0):
       // This also put us in a mode where code is generated differently for
       // this AST.
       optimized_greedy_register_ = compiler.allocate_working_register
@@ -931,7 +947,7 @@ class Quantifier extends MiniExpAst:
   case_expand compiler/MiniExpCompiler -> Quantifier:
     b := body_.case_expand compiler
     if b == body_: return this
-    return Quantifier.private
+    return Quantifier.private_
         --min=min_
         --max=max_
         --greedy=greedy_
@@ -994,17 +1010,27 @@ class Atom extends MiniExpAst:
   analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
     return MiniExpAnalysis.atom
 
-// TODO: Not yet Unicode-aware.
+class Range_:
+  from /int := 0
+  to   /int := 0
+
+  constructor .from .to:
+
+  stringify -> string:
+    return "$from-$to"
+
 class CharClass extends MiniExpAst:
   ranges_ /List ::= []
   positive_ /bool ::= ?
 
   constructor .positive_:
 
+  constructor.private_ .ranges_ .positive_:
+
   // Here and elsewhere, "to" is inclusive.
   add from/int to/int -> none:
-    ranges_.add from
-    ranges_.add to
+    ranges_.add
+        Range_ from to
 
   static space_codes_/List/*<int>*/ := [
     -1,
@@ -1058,70 +1084,119 @@ class CharClass extends MiniExpAst:
       add 'z' + 1
           0xffff
 
-  case_insensitive_ranges old_ranges/List/*<int>*/ -> List/*<int>*/:
-    ranges/List/*<int>*/ := []
-    // TODO: Non-ascii.
-    letters := List 27: false  // 26 letters of alphabet plus a "known elephant in Cairo".
-    for i := 0; i < old_ranges.size; i += 2:
-      start/int := old_ranges[i]
-      end/int := old_ranges[i + 1]
-      if start <= 'z' and end >= 'A':
-        for j := start; j <= end; j++:
-          if 'A' <= j <= 'Z':
-            letters[j - 'A'] = true
-          else if 'a' <= j <= 'z':
-            letters[j - 'a'] = true
-    for i := 0; i < old_ranges.size; i += 2:
-      start/int := old_ranges[i]
-      end/int := old_ranges[i + 1]
+  fix_ranges ranges/List/*<Range_>*/ case_sensitive/bool -> List/*<Range_>*/:
+    // There's a lot of punctuation and no case-sensitive characters before the
+    // Unicode 'A' code point.
+    ranges = ranges.copy
+    if not case_sensitive and (ranges.any: it.to >= 'A'):
+      old_size := ranges.size
+      range_start := -1
+      range_end := -1
+      for i := 0; i < old_size; i++:
+        range := ranges[i]
+        // For each character, eg. in the range a-f, we need to find the
+        // equivalent characters, eg. A-F, and add them to the character class.
+        for j := range.from; j <= range.to; j++:
+          // Get the characters that are equivalent to the current one.
+          // For example, if j == 'A' we would expect to get ['a', 'A'] or
+          // ['A', 'a'].  A reply of null means there the character is only
+          // case-equivalent to itself.  There are never more than three
+          // case equivalents.
+          equivalents := case.reg_exp_equivalence_class j
+          if equivalents and equivalents.size != 1:
+            assert: equivalents.contains j
+            if range_start >= 0 and equivalents.size == 2 and equivalents.contains range_end + 1 and j != range_end + 1:
+              // There's just one case-equivalent character (other than j) and
+              // it's the one we were expecting, so we merely need to extend
+              // the range by one to cover the new character.
+              // (We exclude the theoretical case where j is identical to the
+              // range extension, because in that case we would not record the
+              // other equivalent character.)
+              range_end++
+            else:
+              // Flush the existing range of equivalents that we were
+              // constructing.
+              if range_start >= 0:
+                ranges.add (Range_ range_start range_end)
+                range_start = -1
+              if equivalents.size > 2:
+                // If there are > 2 equivalents, just add them all to the list
+                // of ranges.
+                equivalents.do: | equivalent |
+                  ranges.add (Range_ equivalent equivalent)
+              else:
+                // Since there are two equivalents, and one of them is the
+                // character we already have in a range, start constructing a
+                // new range of equivalents.
+                equivalents.do: | equivalent |
+                  if equivalent != j:
+                    range_start = range_end = equivalent
+        // At the end, flush the equivalent range we were constructing.
+        if range_start >= 0:
+          ranges.add (Range_ range_start range_end)
+          range_start = -1
 
-      // Any part before 'A':
-      e := min end 'A' - 1
-      if start <= e:
-        ranges.add start
-        ranges.add e
-      // Any part between 'Z' and 'a':
-      s := max start 'Z' + 1
-      e = min end 'a' - 1
-      if s <= e:
-        ranges.add s
-        ranges.add e
-      // Any part after 'z':
-      s = max start 'z' + 1
-      if s <= end:
-        ranges.add s
-        ranges.add end
-    start := -1
-    for i := 0; i < 27; i++:
-      if letters[i]:
-        if start == -1:
-          start = i
-      else:
-        if start != -1:
-          ranges.add 'A' + start
-          ranges.add 'A' + i - 1
-          ranges.add 'a' + start
-          ranges.add 'a' + i - 1
-          start = -1
-    // TODO(erikcorry): Sort and merge ranges.
+    // Even if there is no case-independence work to do we still want to
+    // consolidate ranges.
+    ranges.sort --in_place: | a b | a.from - b.from
+
+    // Now that they are sorted, check if it's worth merging
+    // adjacent/overlapping ranges.
+    for i := 1; i < ranges.size; i++:
+      if ranges[i - 1].to + 1 >= ranges[i].from:
+        ranges = merge_adjacent_ranges_ ranges
+        break
+
     return ranges
+
+  // Merge adjacent/overlapping ranges.
+  merge_adjacent_ranges_ ranges/List -> List:
+    last := ranges[0]
+    new_ranges := [last]
+    ranges.do: | range |
+      if last.to + 1 >= range.from:
+        last.to = max last.to range.to
+      else:
+        last = range
+        new_ranges.add last
+    return new_ranges
+
+  case_expand compiler/MiniExpCompiler -> MiniExpAst:
+    ranges := fix_ranges ranges_ compiler.case_sensitive
+    return CharClass.private_ ranges positive_
 
   generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
     compiler.backtrack_if_equal CURRENT_POSITION STRING_LENGTH
-    ranges/List/*<int>*/ := ranges_
-    if not compiler.case_sensitive:
-      ranges = case_insensitive_ranges ranges_
     match := MiniExpLabel
+    match_unicode := MiniExpLabel
+    backtrack_on_in_range := MiniExpLabel
+    ranges_.do: | range |
+      bytes := utf_8_bytes range.to
+      if positive_:
+        if bytes == 1:
+          compiler.goto_if_in_range range.from range.to match
+        else:
+          compiler.goto_if_unicode_in_range range.from range.to match_unicode
+      else:
+        if bytes == 1:
+          compiler.backtrack_if_in_range range.from range.to
+        else:
+          compiler.goto_if_unicode_in_range range.from range.to backtrack_on_in_range
     if positive_:
-      for i := 0; i < ranges.size; i += 2:
-        compiler.goto_if_in_range ranges[i] ranges[i + 1] match
       compiler.backtrack
+      if match_unicode.is_linked:
+        compiler.bind match_unicode
+        compiler.advance_by_rune_width CURRENT_POSITION 1
+        compiler.goto on_success
       compiler.bind match
+      compiler.add_to_register CURRENT_POSITION 1
+      compiler.goto on_success
     else:
-      for i := 0; i < ranges.size; i += 2:
-        compiler.backtrack_if_in_range ranges[i] ranges[i + 1]
-    compiler.add_to_register CURRENT_POSITION 1
-    compiler.goto on_success
+      compiler.advance_by_rune_width CURRENT_POSITION 1
+      compiler.goto on_success
+      if backtrack_on_in_range.is_linked:
+        compiler.bind backtrack_on_in_range
+        compiler.backtrack
 
   analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
     return MiniExpAnalysis.atom
@@ -1308,6 +1383,8 @@ class MiniExp_ implements RegExp:
 
     top_analysis/MiniExpAnalysis := ast.analyze compiler
 
+    ast = ast.case_expand compiler
+
     compiler.add_capture_registers
 
     sticky_entry_point := MiniExpLabel
@@ -1400,7 +1477,6 @@ class MiniExpParser:
     get_token
     ast/MiniExpAst := parse_disjunction
     expect_token NONE
-    ast = ast.case_expand compiler_
     return ast
 
   at_ position/int -> int: return source_[position]
@@ -1910,7 +1986,7 @@ class MiniExpInterpreter:
     while true:
       byte_code := byte_codes_[program_counter]
       if trace_:
-        print "\"$subject\" $program_counter: $BYTE_CODE_NAMES[byte_code * 3]"
+        print "\"$subject\" $program_counter: $BYTE_CODE_NAMES[byte_code * 3] position=$registers_[CURRENT_POSITION]"
         print (" " * (registers_[CURRENT_POSITION] + 1)) + "^"
       program_counter++
       // TODO: Faster implementation.
@@ -1979,6 +2055,12 @@ class MiniExpInterpreter:
         to/int := byte_codes_[program_counter++]
         dest/int := byte_codes_[program_counter++]
         if from <= code and code <= to: program_counter = dest
+      else if byte_code == GOTO_IF_UNICODE_IN_RANGE:
+        code/int := subject[registers_[CURRENT_POSITION]]
+        from/int := byte_codes_[program_counter++]
+        to/int := byte_codes_[program_counter++]
+        dest/int := byte_codes_[program_counter++]
+        if from <= code and code <= to: program_counter = dest
       else if byte_code == GOTO_EQ:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
@@ -2008,6 +2090,26 @@ class MiniExpInterpreter:
       else if byte_code == ADD_TO_REGISTER:
         register_index/int := byte_codes_[program_counter++]
         registers_[register_index] += byte_codes_[program_counter++]
+      else if byte_code == ADVANCE_BY_RUNE_WIDTH:
+        register_index/int := byte_codes_[program_counter++]
+        characters/int := byte_codes_[program_counter++]
+        position := registers_[CURRENT_POSITION]
+        if characters > 0:
+          characters.repeat:
+            if position >= subject.size:
+              position++
+            else:
+              code/int := subject.at --raw position
+              position += MiniExpCompiler.UTF_FIRST_CHAR_TABLE_[code >> 4]
+        else if characters < 0:
+          (-characters).repeat:
+            position--
+            if position < subject.size:
+              code/int? := subject[position]
+              while code == null:
+                position--
+                code = subject[position]
+        registers_[register_index] = position
       else if byte_code == COPY_REGISTER:
         // We don't normally keep the stack pointer in sync with its slot in
         // the registers_, but we have to have it in sync here.
