@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE.md file.
 
 import expect show *
-import string_utils.regexp
+import regexp show RegExp
 
 main:
   foo_bar
@@ -13,9 +13,11 @@ main:
   case
   char_class
   greedy
+  look_around
+  match
 
 foo_bar -> none:
-  re := regexp.RegExp "foo.*bar" --case_sensitive=true --multiline=false
+  re := RegExp "foo.*bar"
   expect (re.has_matching "foo bar")
   expect (re.has_matching "foobar")
   expect_not (re.has_matching "fooba")
@@ -41,7 +43,7 @@ simple -> none:
   }
 
   TESTS.do: | source vectors |
-    re := regexp.RegExp source --case_sensitive=vectors[0] --multiline=vectors[1]
+    re := RegExp source --case_sensitive=vectors[0] --multiline=vectors[1]
     vectors[2].do: | should_match |
       expect
           re.has_matching should_match
@@ -50,18 +52,18 @@ simple -> none:
           re.has_matching should_match
 
 newline -> none:
-  re := regexp.RegExp "foo.bar" --case_sensitive=true --multiline=false
+  re := RegExp "foo.bar" --multiline=false
   expect (re.has_matching "foo bar")
   expect_not (re.has_matching "foo\nbar")
   expect_not (re.has_matching "foo\rbar")
 
-  re = regexp.RegExp "foo.bar" --case_sensitive=true --multiline=true
+  re = RegExp "foo.bar" --multiline=true
   expect (re.has_matching "foo bar")
   expect (re.has_matching "foo\nbar")
   expect (re.has_matching "foo\rbar")
 
 utf -> none:
-  re := regexp.RegExp "foo.+bar" --case_sensitive=true --multiline=false
+  re := RegExp "foo.+bar" --multiline=false
   expect (re.has_matching "foo bar")
   expect_not (re.has_matching "foobar")
   expect (re.has_matching "fooæbar")
@@ -69,12 +71,12 @@ utf -> none:
   expect (re.has_matching "foo☃bar")
   expect (re.has_matching "foo..bar")
 
-  re = regexp.RegExp "^sø(en)?\$" --case_sensitive=true --multiline=false
+  re = RegExp "^sø(en)?\$"
   expect (re.has_matching "søen")
   expect_not (re.has_matching "søe")
   expect (re.has_matching "sø")
 
-  re = regexp.RegExp "^sø*\$" --case_sensitive=true --multiline=false
+  re = RegExp "^sø*\$"
   expect_not (re.has_matching "")
   expect (re.has_matching "s")
   expect (re.has_matching "sø")
@@ -82,7 +84,7 @@ utf -> none:
   expect_not (re.has_matching "sæø")
   expect_not (re.has_matching "søø.")
 
-  re = regexp.RegExp "^s€*\$" --case_sensitive=true --multiline=false
+  re = RegExp "^s€*\$"
   expect_not (re.has_matching "")
   expect (re.has_matching "s")
   expect (re.has_matching "s€")
@@ -90,7 +92,7 @@ utf -> none:
   expect_not (re.has_matching "sæ€")
   expect_not (re.has_matching "s€€.")
 
-  re = regexp.RegExp "^s☃*\$" --case_sensitive=true --multiline=false
+  re = RegExp "^s☃*\$"
   expect_not (re.has_matching "")
   expect (re.has_matching "s")
   expect (re.has_matching "s☃")
@@ -98,7 +100,7 @@ utf -> none:
   expect_not (re.has_matching "s€☃")
   expect_not (re.has_matching "s☃☃.")
 
-  re = regexp.RegExp "foo.bar" --case_sensitive=true --multiline=false
+  re = RegExp "foo.bar"
   expect (re.has_matching "foo bar")
   expect_not (re.has_matching "foobar")
   expect (re.has_matching "fooæbar")
@@ -107,14 +109,14 @@ utf -> none:
   expect_not (re.has_matching "foo..bar")
 
 case -> none:
-  re := regexp.RegExp "foo.+bar" --case_sensitive=false --multiline=false
+  re := RegExp "foo.+bar" --case_sensitive=false
   expect (re.has_matching "foo bar")
   expect_not (re.has_matching "foobar")
   expect (re.has_matching "Foo BaR")
   expect_not (re.has_matching "Foo Bax")
   expect_not (re.has_matching "FOOBAR")
 
-  re = regexp.RegExp "Søen" --case_sensitive=false --multiline=false
+  re = RegExp "Søen" --case_sensitive=false
   expect (re.has_matching "Søen")
   expect (re.has_matching "søen")
   expect (re.has_matching "SøEN")
@@ -124,7 +126,7 @@ case -> none:
   expect_not (re.has_matching "soen")
   expect_not (re.has_matching "söen")
 
-  re = regexp.RegExp "Sø*en" --case_sensitive=false --multiline=false
+  re = RegExp "Sø*en" --case_sensitive=false
   expect (re.has_matching "Søen")
   expect (re.has_matching "Søøøen")
   expect (re.has_matching "søen")
@@ -136,7 +138,7 @@ case -> none:
   expect_not (re.has_matching "soen")
   expect_not (re.has_matching "söen")
 
-  re = regexp.RegExp "Sø*en" --case_sensitive=false --multiline=false
+  re = RegExp "Sø*en" --case_sensitive=false
   expect (re.has_matching "Søen")
   expect (re.has_matching "Søøøen")
   expect (re.has_matching "søen")
@@ -149,7 +151,7 @@ case -> none:
   expect_not (re.has_matching "söen")
 
   // Sigma test. 'Σ', 'ς', 'σ'
-  re = regexp.RegExp "Six Σ event" --case_sensitive=false --multiline=false
+  re = RegExp "Six Σ event" --case_sensitive=false
   expect_not (re.has_matching "Søen")
   expect_not (re.has_matching "Six . event")
   expect_not (re.has_matching "Six .. event")
@@ -158,7 +160,7 @@ case -> none:
   expect (re.has_matching "six ς event")
   expect (re.has_matching "six σ event")
 
-  re = regexp.RegExp "Six Σ event" --case_sensitive=true --multiline=false
+  re = RegExp "Six Σ event" --case_sensitive=true
   expect_not (re.has_matching "Søen")
   expect_not (re.has_matching "Six . event")
   expect_not (re.has_matching "Six .. event")
@@ -167,7 +169,7 @@ case -> none:
   expect_not (re.has_matching "Six ς event")
   expect_not (re.has_matching "Six σ event")
 
-  re = regexp.RegExp "foo[a-z]bar" --case_sensitive=false --multiline=false
+  re = RegExp "foo[a-z]bar" --case_sensitive=false
   expect_not (re.has_matching "foo bar")
   expect_not (re.has_matching "FOO BAR")
   expect (re.has_matching "fooabar")
@@ -181,7 +183,7 @@ case -> none:
   expect_not (re.has_matching "foo[bar")
   expect_not (re.has_matching "foo`bar")
 
-  re = regexp.RegExp "foo[M-d]bar" --case_sensitive=false --multiline=false
+  re = RegExp "foo[M-d]bar" --case_sensitive=false
   expect_not (re.has_matching "foolbar")
   expect_not (re.has_matching "fooebar")
   expect_not (re.has_matching "fooLbar")
@@ -193,7 +195,7 @@ case -> none:
   expect (re.has_matching "foo`bar")
 
 char_class:
-  re := regexp.RegExp "foo[z-ø]bar" --case_sensitive=false --multiline=false
+  re := RegExp "foo[z-ø]bar" --case_sensitive=false
   expect (re.has_matching "foozbar")
   expect (re.has_matching "fooZbar")
   expect_not (re.has_matching "fooxbar")
@@ -207,7 +209,7 @@ char_class:
   expect_not (re.has_matching "foo€bar")  // 3-byte Unicode char.
   expect_not (re.has_matching "foo☃bar")  // 4-byte Unicode char.
 
-  re = regexp.RegExp "foo[^z-ø]bar" --case_sensitive=false --multiline=false
+  re = RegExp "foo[^z-ø]bar" --case_sensitive=false
   expect_not (re.has_matching "foozbar")
   expect_not (re.has_matching "fooZbar")
   expect (re.has_matching "fooxbar")
@@ -222,7 +224,7 @@ char_class:
   expect (re.has_matching "fooMbar")       // Just a regular M.
 
 greedy:
-  re := regexp.RegExp "foo.{3,}bar" --case_sensitive=true --multiline=true
+  re := RegExp "foo.{3,}bar"
   expect_not (re.has_matching "foobar")
   expect_not (re.has_matching "foo.bar")
   expect_not (re.has_matching "foo..bar")
@@ -241,7 +243,7 @@ greedy:
   expect     (re.has_matching "foo±±±±±±bar")
 
   // Try again with a . that can't match newlines
-  re = regexp.RegExp "foo.{3,}bar" --case_sensitive=true --multiline=false
+  re = RegExp "foo.{3,}bar"
   expect_not (re.has_matching "foo±bar")
   expect_not (re.has_matching "foo±±bar")
   expect     (re.has_matching "foo±±±bar")
@@ -250,5 +252,79 @@ greedy:
   expect     (re.has_matching "foo±±±±±±bar")
 
   // Don't let a negative character class match a part of a UTF-8 sequence.
-  re = regexp.RegExp "foo.*[^f][^f]bar" --case_sensitive=true --multiline=false
+  re = RegExp "foo.*[^f][^f]bar"
   expect_not (re.has_matching "foo€bar")
+
+look_around -> none:
+  // Positive look-ahead.
+  re := RegExp "foo(?=[a-z]{5})bar"
+  expect     (re.has_matching "foobarxx")
+  expect     (re.has_matching "..foobarxx..")
+  expect     (re.has_matching "..foobarrr..")
+  expect     (re.has_matching "..foobarrrrr")
+  expect_not (re.has_matching "..foobar....")
+  expect_not (re.has_matching "..foobarx...")
+  expect     (re.has_matching "..foofoobarxx..")
+
+  // Negative look-ahead.
+  re = RegExp "foo(?![a-z]{5})bar"
+  expect_not (re.has_matching "foobarxx")
+  expect_not (re.has_matching "..foobarxx..")
+  expect_not (re.has_matching "..foobarrr..")
+  expect_not (re.has_matching "..foobarrrrr")
+  expect     (re.has_matching "..foobar....")
+  expect     (re.has_matching "..foobarx...")
+  expect_not (re.has_matching "..foofoobarxx..")
+
+match -> none:
+  // No ().
+  re := RegExp ".x.y."
+  m := re.first_matching ".x.y."
+  expect_equals 0 m.start
+  expect_equals 5 m.end
+
+  // Capturing ().
+  re = RegExp ".(x.y)."
+  m = re.first_matching ".x.y."
+  expect_equals 0 m.start
+  expect_equals 5 m.end
+  expect_equals ".x.y." m[0]
+  expect_equals "x.y" m[1]
+  expect_equals 1 (m.start 1)
+  expect_equals 4 (m.end 1)
+
+  m = re.first_matching ".x*y."
+  expect_equals 0 m.start
+  expect_equals 5 m.end
+  expect_equals ".x*y." m[0]
+  expect_equals "x*y" m[1]
+  expect_equals 1 (m.start 1)
+  expect_equals 4 (m.end 1)
+
+  // Capturing and non-capturing ().
+  re = RegExp "(.)(?:x.y)(.)"
+  m = re.first_matching ".0x1y2."
+  expect_equals 1 m.start
+  expect_equals 6 m.end
+  expect_equals "0x1y2" m[0]
+  expect_equals "0" m[1]
+  expect_equals "2" m[2]
+
+  // Capturing () in a look-ahead.
+  re = RegExp "foo(?=...(..))bar"
+  m = re.first_matching "   foobar42  "
+  expect_equals "foobar" m[0]  // Capture 0 is the whole match.
+  expect_equals "42" m[1]      // Capture 1 is outside of capture 0!
+
+  // Optional () in loop depends on last iteration.
+  re = RegExp "(?:(foo)?(bar)?/)*"
+  m = re.first_matching "foobar/foobar/foo/"
+  // TODO: Why not?
+  // expect_equals "foobar/foobar/foo/" m[0]
+  expect_equals "foo" m[1]
+  expect_equals null m[2]
+  m = re.first_matching "foobar/foo/foobar/"
+  // TODO: Why not?
+  // expect_equals "foobar/foo/foobar/" m[0]
+  expect_equals "foo" m[1]
+  expect_equals "bar" m[2]
