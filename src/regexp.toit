@@ -54,12 +54,12 @@ class MiniExpLabel_:
     codes.add value
 
 // Registers.
-ZERO_REGISTER_ ::= 0
+ZERO_REGISTER_        ::= 0
 NO_POSITION_REGISTER_ ::= 1
-CURRENT_POSITION_ ::= 2
-STRING_LENGTH_ ::= 3
-STACK_POINTER_ ::= 4
-FIXED_REGISTERS ::= 5
+CURRENT_POSITION_     ::= 2
+STRING_LENGTH_        ::= 3
+STACK_POINTER_        ::= 4
+FIXED_REGISTERS_      ::= 5
 
 REGISTER_NAMES_ ::= [
   "ZERO",
@@ -139,19 +139,16 @@ BYTE_CODE_NAMES_ ::= [
   "FAIL", 0, 0,
 ]
 
-CHAR_CODE_BACKSPACE ::= 8
-CHAR_CODE_VERTICAL_TAB ::= 11
-CHAR_CODE_FORM_FEED ::= 12
-CHAR_CODE_NO_BREAK_SPACE ::= 0xa0
-CHAR_CODE_OGHAM_SPACE_MARK ::= 0x1680
-CHAR_CODE_EN_QUAD ::= 0x2000
-CHAR_CODE_HAIR_SPACE ::= 0x200a
-CHAR_CODE_LINE_SEPARATOR ::= 0x2028
-CHAR_CODE_PARAGRAPH_SEPARATOR ::= 0x2029
-CHAR_CODE_NARROW_NO_BREAK_SPACE ::= 0x202f
-CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE ::= 0x205f
-CHAR_CODE_IDEOGRAPHIC_SPACE ::= 0x3000
-CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE ::= 0xfeff
+CHAR_CODE_NO_BREAK_SPACE_ ::= 0xa0
+CHAR_CODE_OGHAM_SPACE_MARK_ ::= 0x1680
+CHAR_CODE_EN_QUAD_ ::= 0x2000
+CHAR_CODE_HAIR_SPACE_ ::= 0x200a
+CHAR_CODE_LINE_SEPARATOR_ ::= 0x2028
+CHAR_CODE_PARAGRAPH_SEPARATOR_ ::= 0x2029
+CHAR_CODE_NARROW_NO_BREAK_SPACE_ ::= 0x202f
+CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_ ::= 0x205f
+CHAR_CODE_IDEOGRAPHIC_SPACE_ ::= 0x3000
+CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_ ::= 0xfeff
 
 class MiniExpCompiler_:
   pattern /string ::= ?
@@ -165,7 +162,7 @@ class MiniExpCompiler_:
   pending_goto_ /MiniExpLabel_? := null
 
   constructor .pattern .case_sensitive:
-    for i := 0; i < FIXED_REGISTERS; i++:
+    for i := 0; i < FIXED_REGISTERS_; i++:
       registers.add (i == NO_POSITION_REGISTER_ ? NO_POSITION_ : 0)
 
   codes -> List:
@@ -598,7 +595,7 @@ abstract class MultiLineAssertion_ extends Assertion:
   backtrack_if_not_newline compiler/MiniExpCompiler_ -> none:
     compiler.backtrack_if_in_range
         '\r' + 1
-        CHAR_CODE_LINE_SEPARATOR - 1
+        CHAR_CODE_LINE_SEPARATOR_ - 1
     compiler.backtrack_if_in_range
         0
         '\n' - 1
@@ -606,7 +603,7 @@ abstract class MultiLineAssertion_ extends Assertion:
         '\n' + 1
         '\r' - 1
     compiler.backtrack_if_in_range
-        CHAR_CODE_PARAGRAPH_SEPARATOR + 1
+        CHAR_CODE_PARAGRAPH_SEPARATOR_ + 1
         0xffff
 
 class AtBeginningOfLine_ extends MultiLineAssertion_:
@@ -1036,14 +1033,14 @@ class CharClass_ extends MiniExpAst_:
     -1,
     '\t', '\r',
     ' ', ' ',
-    CHAR_CODE_NO_BREAK_SPACE, CHAR_CODE_NO_BREAK_SPACE,
-    CHAR_CODE_OGHAM_SPACE_MARK, CHAR_CODE_OGHAM_SPACE_MARK,
-    CHAR_CODE_EN_QUAD, CHAR_CODE_HAIR_SPACE,
-    CHAR_CODE_LINE_SEPARATOR, CHAR_CODE_PARAGRAPH_SEPARATOR,
-    CHAR_CODE_NARROW_NO_BREAK_SPACE, CHAR_CODE_NARROW_NO_BREAK_SPACE,
-    CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE, CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE,
-    CHAR_CODE_IDEOGRAPHIC_SPACE, CHAR_CODE_IDEOGRAPHIC_SPACE,
-    CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE, CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE,
+    CHAR_CODE_NO_BREAK_SPACE_, CHAR_CODE_NO_BREAK_SPACE_,
+    CHAR_CODE_OGHAM_SPACE_MARK_, CHAR_CODE_OGHAM_SPACE_MARK_,
+    CHAR_CODE_EN_QUAD_, CHAR_CODE_HAIR_SPACE_,
+    CHAR_CODE_LINE_SEPARATOR_, CHAR_CODE_PARAGRAPH_SEPARATOR_,
+    CHAR_CODE_NARROW_NO_BREAK_SPACE_, CHAR_CODE_NARROW_NO_BREAK_SPACE_,
+    CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_, CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_,
+    CHAR_CODE_IDEOGRAPHIC_SPACE_, CHAR_CODE_IDEOGRAPHIC_SPACE_,
+    CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_, CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_,
     0x10000]
 
   add_spaces -> none:
@@ -1580,7 +1577,7 @@ class MiniExpParser_:
       if not multiline_:
         ast.add '\n' '\n'
         ast.add '\r' '\r'
-        ast.add CHAR_CODE_LINE_SEPARATOR CHAR_CODE_PARAGRAPH_SEPARATOR
+        ast.add CHAR_CODE_LINE_SEPARATOR_ CHAR_CODE_PARAGRAPH_SEPARATOR_
       return ast
 
     if peek_token BACK_REFERENCE:
@@ -1784,12 +1781,12 @@ class MiniExpParser_:
   }
 
   static CONTROL_CHARACTERS ::= {
-    'b': CHAR_CODE_BACKSPACE,
-    'f': CHAR_CODE_FORM_FEED,
+    'b': '\b',
+    'f': '\f',
     'n': '\n',
     'r': '\r',
     't': '\t',
-    'v': CHAR_CODE_VERTICAL_TAB,
+    'v': '\v',
   }
 
   static token_from_charcode code/int -> int:
