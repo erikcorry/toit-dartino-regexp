@@ -1271,30 +1271,34 @@ class Capture_ extends MiniExpAst_:
 interface Match:
   /// Returns the regular expression that created this match.
   pattern -> RegExp
-  /// Returns the input string that was matched by the regexp.
+
+  /// Returns the input string in which a match was found.
   input -> string
+
+  /// Returns the substring of the input that matched the regexp.
+  matched -> string
+
   /// Returns the start index of the match in the string.
-  start -> int
+  index -> int
+
+  /// Returns the end index of the match in the string.
+  end_index -> int
+
   /**
   Returns the start index of the nth capture in the string.
-  The 0th capture is the entire match of the regexp.
+  The 0th capture is the index of the match of the whole regexp.
   */
-  start index/int -> int?
+  index index/int -> int?
+
   /**
   Returns the end index of the nth capture in the string.
-  The 0th capture is the entire match of the regexp.
+  The 0th capture is the index of the match of the whole regexp.
   */
-  end -> int
-  ///Returns the end index of the match in the string
-  end index/int -> int?
+  end_index index/int -> int?
+
   /**
   Returns the string captured by the nth capture.
-  The 0th capture is the entire match of the regexp.
-  */
-  group index/int -> string?
-  /**
-  Returns the string captured by the nth capture.
-  The 0th capture is the entire match of the regexp.
+  The 0th capture is the entire substring that matched the regexp.
   */
   operator [] index/int -> string
 
@@ -1306,31 +1310,30 @@ class MiniExpMatch_ implements Match:
 
   constructor .pattern .input .registers_ .first_capture_reg_:
 
-  group_count -> int: return (registers_.size - 2 - first_capture_reg_) >> 1
+  capture_count -> int: return (registers_.size - 2 - first_capture_reg_) >> 1
 
-  start -> int: return registers_[first_capture_reg_]
+  matched -> string: return this[0]
 
-  start index/int -> int?:
-    if index > group_count: throw "OUT_OF_RANGE"
+  index -> int: return registers_[first_capture_reg_]
+
+  end_index -> int: return registers_[first_capture_reg_ + 1]
+
+  index index/int -> int?:
+    if not 0 <= index <= capture_count: throw "OUT_OF_RANGE"
     result := registers_[first_capture_reg_ + index * 2]
     return result == NO_POSITION_ ? null : result
 
-  end -> int: return registers_[first_capture_reg_ + 1]
-
-  end index/int -> int?:
-    if index > group_count: throw "OUT_OF_RANGE"
-    result := registers_[first_capture_reg_ + index * 2 + 1]
+  end_index index/int -> int?:
+    if not 0 <= index <= capture_count: throw "OUT_OF_RANGE"
+    result := registers_[first_capture_reg_ + 1 + index * 2]
     return result == NO_POSITION_ ? null : result
 
-  group index/int -> string?:
-    if index > group_count: throw "OUT_OF_RANGE"
+  operator[] index/int -> string?:
+    if not 0 <= index <= capture_count: throw "OUT_OF_RANGE"
     index *= 2
     index += first_capture_reg_
     if registers_[index] == NO_POSITION_: return null
     return input.copy registers_[index] registers_[index + 1]
-
-  operator[] index/int -> string?: return group index
-
 
 interface RegExp:
   pattern -> string
@@ -1389,12 +1392,12 @@ class MiniExp_ implements RegExp:
     position := start
     if not 0 <= position <= subject.size: throw "OUT_OF_RANGE"
     while position <= subject.size:
-      current := match_ subject position 0
+      current := (match_ subject position 0) as MiniExpMatch_
       if current == null: return at_least_once
-      if current.start == current.end:
-        position = current.end + 1
+      if current.index == current.end_index:
+        position = current.end_index + 1
       else:
-        position = current.end
+        position = current.end_index
       block.call current
       at_least_once = true
     return at_least_once
@@ -2015,8 +2018,19 @@ class MiniExpInterpreter_:
     while true:
       byte_code := byte_codes_[program_counter]
       if trace_:
-        print "\"$subject\" $program_counter: $BYTE_CODE_NAMES_[byte_code * 3] position=$registers_[CURRENT_POSITION_]"
+        reg_args := BYTE_CODE_NAMES_[byte_code * 3 + 1]
+        other_args := BYTE_CODE_NAMES_[byte_code * 3 + 2]
+        arg_description := []
+        reg_args.repeat:
+          reg := byte_codes_[program_counter + it + 1]
+          if reg < FIXED_REGISTERS_:
+            arg_description.add REGISTER_NAMES_[reg]
+          else:
+            arg_description.add "r$reg"
+        other_args.repeat: arg_description.add "$(byte_codes_[program_counter + reg_args + it + 1])"
+        print "\"$subject\" $program_counter: $BYTE_CODE_NAMES_[byte_code * 3]($(arg_description.join ", ")) position=$registers_[CURRENT_POSITION_]"
         print (" " * (registers_[CURRENT_POSITION_] + 1)) + "^"
+        print registers_
       program_counter++
       // TODO: Faster implementation.
       if byte_code == BC_GOTO_:

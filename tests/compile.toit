@@ -4,6 +4,7 @@
 
 import expect show *
 import regexp show RegExp
+import regexp
 
 main:
   foo_bar
@@ -280,32 +281,32 @@ match -> none:
   // No ().
   re := RegExp ".x.y."
   m := re.first_matching ".x.y."
-  expect_equals 0 m.start
-  expect_equals 5 m.end
+  expect_equals 0 m.index
+  expect_equals 5 m.matched.size
 
   // Capturing ().
   re = RegExp ".(x.y)."
   m = re.first_matching ".x.y."
-  expect_equals 0 m.start
-  expect_equals 5 m.end
+  expect_equals 0 m.index
+  expect_equals 5 m.matched.size
   expect_equals ".x.y." m[0]
   expect_equals "x.y" m[1]
-  expect_equals 1 (m.start 1)
-  expect_equals 4 (m.end 1)
+  expect_equals 1 (m.index 1)
+  expect_equals 3 m[1].size
 
   m = re.first_matching ".x*y."
-  expect_equals 0 m.start
-  expect_equals 5 m.end
+  expect_equals 0 m.index
+  expect_equals 5 m.matched.size
   expect_equals ".x*y." m[0]
   expect_equals "x*y" m[1]
-  expect_equals 1 (m.start 1)
-  expect_equals 4 (m.end 1)
+  expect_equals 1 (m.index 1)
+  expect_equals 3 m[1].size
 
   // Capturing and non-capturing ().
   re = RegExp "(.)(?:x.y)(.)"
   m = re.first_matching ".0x1y2."
-  expect_equals 1 m.start
-  expect_equals 6 m.end
+  expect_equals 1 m.index
+  expect_equals 5 m.matched.size
   expect_equals "0x1y2" m[0]
   expect_equals "0" m[1]
   expect_equals "2" m[2]
