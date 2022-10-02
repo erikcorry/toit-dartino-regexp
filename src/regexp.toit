@@ -176,7 +176,7 @@ class MiniExpCompiler_:
       byte_array := ByteArray extra_constants_.size: extra_constants_[it]
       return pattern.to_byte_array + byte_array
 
-  // Returns the rune for the constant pool object at the given index.
+  // The rune for the constant pool object at the given index.
   constant_pool_entry index/int -> int:
     if index < pattern.size: return pattern[index]
     first_byte := extra_constants_[index - pattern.size]
@@ -1269,35 +1269,35 @@ class Capture_ extends MiniExpAst_:
     return MiniExpAnalysis_.capture body_analysis start_register_ end_register_
 
 interface Match:
-  /// Returns the regular expression that created this match.
+  /// The regular expression that created this match.
   pattern -> RegExp
 
-  /// Returns the input string in which a match was found.
+  /// The input string in which a match was found.
   input -> string
 
-  /// Returns the substring of the input that matched the regexp.
+  /// The substring of the input that matched the regexp.
   matched -> string
 
-  /// Returns the start index of the match in the string.
+  /// The start index of the match in the string.
   index -> int
 
-  /// Returns the end index of the match in the string.
+  /// The end index of the match in the string.
   end_index -> int
 
   /**
-  Returns the start index of the nth capture in the string.
+  The start index of the nth capture in the string.
   The 0th capture is the index of the match of the whole regexp.
   */
   index index/int -> int?
 
   /**
-  Returns the end index of the nth capture in the string.
+  The end index of the nth capture in the string.
   The 0th capture is the index of the match of the whole regexp.
   */
   end_index index/int -> int?
 
   /**
-  Returns the string captured by the nth capture.
+  The string captured by the nth capture.
   The 0th capture is the entire substring that matched the regexp.
   */
   operator [] index/int -> string
