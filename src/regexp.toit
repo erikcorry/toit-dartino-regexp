@@ -5,7 +5,7 @@
 import bytes show Buffer
 import case
 
-class MiniExpLabel:
+class MiniExpLabel_:
   // Initially points to -1 to indicate the label is neither linked (used) nor
   // bound (fixed to a location). When the label is linked, but not bound, it
   // has a negative value, determined by fixup_location(l), that indicates the
@@ -54,14 +54,14 @@ class MiniExpLabel:
     codes.add value
 
 // Registers.
-ZERO_REGISTER ::= 0
-NO_POSITION_REGISTER ::= 1
-CURRENT_POSITION ::= 2
-STRING_LENGTH ::= 3
-STACK_POINTER ::= 4
-FIXED_REGISTERS ::= 5
+ZERO_REGISTER_        ::= 0
+NO_POSITION_REGISTER_ ::= 1
+CURRENT_POSITION_     ::= 2
+STRING_LENGTH_        ::= 3
+STACK_POINTER_        ::= 4
+FIXED_REGISTERS_      ::= 5
 
-REGISTER_NAMES ::= [
+REGISTER_NAMES_ ::= [
   "ZERO",
   "NO_POSITION_REGISTER",
   "CURRENT_POSITION",
@@ -87,34 +87,34 @@ REGISTER_NAMES ::= [
 
 // Used for capture registers that have not captured any position in the
 // string.
-NO_POSITION ::= -1
+NO_POSITION_ ::= -1
 
 // Byte codes.
-GOTO ::= 0  // label
-PUSH_REGISTER ::= 1  // reg
-PUSH_BACKTRACK ::= 2  // const
-POP_REGISTER ::= 3  // reg
-BACKTRACK_EQ ::= 4  // reg reg
-BACKTRACK_NE ::= 5  // reg reg
-BACKTRACK_GT ::= 6  // reg reg
-BACKTRACK_IF_NO_MATCH ::= 7  // constant-pool-offset
-BACKTRACK_IF_IN_RANGE ::= 8  // from to
-GOTO_IF_MATCH ::= 9  // char_code label
-GOTO_IF_IN_RANGE ::= 10  // from to label
-GOTO_IF_UNICODE_IN_RANGE ::= 11  // from to label
-GOTO_EQ ::= 12 // reg reg label
-GOTO_GE ::= 13 // reg reg label
-GOTO_IF_WORD_CHARACTER ::= 14  // position-offset label
-ADD_TO_REGISTER ::= 15 // reg const
-ADVANCE_BY_RUNE_WIDTH ::= 16  // reg
-COPY_REGISTER ::= 17 // dest-reg source-reg
-BACKTRACK_ON_BACK_REFERENCE ::= 18 // capture-reg
-BACKTRACK ::= 19
-SUCCEED ::= 20
-FAIL ::= 21
+BC_GOTO_                        ::= 0  // label
+BC_PUSH_REGISTER_               ::= 1  // reg
+BC_PUSH_BACKTRACK_              ::= 2  // const
+BC_POP_REGISTER_                ::= 3  // reg
+BC_BACKTRACK_EQ_                ::= 4  // reg reg
+BC_BACKTRACK_NE_                ::= 5  // reg reg
+BC_BACKTRACK_GT_                ::= 6  // reg reg
+BC_BACKTRACK_IF_NO_MATCH_       ::= 7  // constant-pool-offset
+BC_BACKTRACK_IF_IN_RANGE_       ::= 8  // from to
+BC_GOTO_IF_MATCH_               ::= 9  // char_code label
+BC_GOTO_IF_IN_RANGE_            ::= 10 // from to label
+BC_GOTO_IF_UNICODE_IN_RANGE_    ::= 11 // from to label
+BC_GOTO_EQ_                     ::= 12 // reg reg label
+BC_GOTO_GE_                     ::= 13 // reg reg label
+BC_GOTO_IF_WORD_CHARACTER_      ::= 14 // position-offset label
+BC_ADD_TO_REGISTER_             ::= 15 // reg const
+BC_ADVANCE_BY_RUNE_WIDTH_       ::= 16 // reg
+BC_COPY_REGISTER_               ::= 17 // dest-reg source-reg
+BC_BACKTRACK_ON_BACK_REFERENCE_ ::= 18 // capture-reg
+BC_BACKTRACK_                   ::= 19
+BC_SUCCEED_                     ::= 20
+BC_FAIL_                        ::= 21
 
 // Format is name, number of register arguments, number of other arguments.
-BYTE_CODE_NAMES ::= [
+BYTE_CODE_NAMES_ ::= [
   "GOTO", 0, 1,
   "PUSH_REGISTER", 1, 0,
   "PUSH_BACKTRACK", 0, 1,
@@ -139,21 +139,18 @@ BYTE_CODE_NAMES ::= [
   "FAIL", 0, 0,
 ]
 
-CHAR_CODE_BACKSPACE ::= 8
-CHAR_CODE_VERTICAL_TAB ::= 11
-CHAR_CODE_FORM_FEED ::= 12
-CHAR_CODE_NO_BREAK_SPACE ::= 0xa0
-CHAR_CODE_OGHAM_SPACE_MARK ::= 0x1680
-CHAR_CODE_EN_QUAD ::= 0x2000
-CHAR_CODE_HAIR_SPACE ::= 0x200a
-CHAR_CODE_LINE_SEPARATOR ::= 0x2028
-CHAR_CODE_PARAGRAPH_SEPARATOR ::= 0x2029
-CHAR_CODE_NARROW_NO_BREAK_SPACE ::= 0x202f
-CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE ::= 0x205f
-CHAR_CODE_IDEOGRAPHIC_SPACE ::= 0x3000
-CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE ::= 0xfeff
+CHAR_CODE_NO_BREAK_SPACE_ ::= 0xa0
+CHAR_CODE_OGHAM_SPACE_MARK_ ::= 0x1680
+CHAR_CODE_EN_QUAD_ ::= 0x2000
+CHAR_CODE_HAIR_SPACE_ ::= 0x200a
+CHAR_CODE_LINE_SEPARATOR_ ::= 0x2028
+CHAR_CODE_PARAGRAPH_SEPARATOR_ ::= 0x2029
+CHAR_CODE_NARROW_NO_BREAK_SPACE_ ::= 0x202f
+CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_ ::= 0x205f
+CHAR_CODE_IDEOGRAPHIC_SPACE_ ::= 0x3000
+CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_ ::= 0xfeff
 
-class MiniExpCompiler:
+class MiniExpCompiler_:
   pattern /string ::= ?
   case_sensitive /bool ::= ?
   registers /List ::= []
@@ -162,11 +159,11 @@ class MiniExpCompiler:
   codes_ /List ::= []
   extra_constants_ /List ::= []
   back_references_ /List ::= []
-  pending_goto_ /MiniExpLabel? := null
+  pending_goto_ /MiniExpLabel_? := null
 
   constructor .pattern .case_sensitive:
-    for i := 0; i < FIXED_REGISTERS; i++:
-      registers.add (i == NO_POSITION_REGISTER ? NO_POSITION : 0)
+    for i := 0; i < FIXED_REGISTERS_; i++:
+      registers.add (i == NO_POSITION_REGISTER_ ? NO_POSITION_ : 0)
 
   codes -> List:
     flush_pending_goto
@@ -179,7 +176,7 @@ class MiniExpCompiler:
       byte_array := ByteArray extra_constants_.size: extra_constants_[it]
       return pattern.to_byte_array + byte_array
 
-  // Returns the rune for the constant pool object at the given index.
+  // The rune for the constant pool object at the given index.
   constant_pool_entry index/int -> int:
     if index < pattern.size: return pattern[index]
     first_byte := extra_constants_[index - pattern.size]
@@ -209,21 +206,21 @@ class MiniExpCompiler:
     if arg1 != null: codes_.add arg1
     if arg2 != null: codes_.add arg2
 
-  generate ast/MiniExpAst on_success/MiniExpLabel -> none:
+  generate ast/MiniExpAst_ on_success/MiniExpLabel_ -> none:
     bind ast.label
     ast.generate this on_success
 
-  bind label/MiniExpLabel -> none:
+  bind label/MiniExpLabel_ -> none:
     if label == pending_goto_:
       pending_goto_ = null  // Peephole optimization.
     flush_pending_goto
     label.bind codes_
 
-  link label/MiniExpLabel -> none: label.link codes_
+  link label/MiniExpLabel_ -> none: label.link codes_
 
-  succeed -> none: emit_ SUCCEED
+  succeed -> none: emit_ BC_SUCCEED_
 
-  fail -> none: emit_ FAIL
+  fail -> none: emit_ BC_FAIL_
 
   allocate_working_register -> int: return allocate_constant_register 0
 
@@ -239,13 +236,13 @@ class MiniExpCompiler:
     capture_register_count += 2
     return -capture_register_count + 1
 
-  add_back_reference b/BackReference -> none:
+  add_back_reference b/BackReference_ -> none:
     back_references_.add b
 
   add_capture_registers -> none:
     first_capture_register = registers.size
     for i := 0; i < capture_register_count; i++:
-      registers.add NO_POSITION
+      registers.add NO_POSITION_
     process_back_refences
 
   process_back_refences -> none:
@@ -257,7 +254,7 @@ class MiniExpCompiler:
         // captures it turns into an octal character code escape.
         code_unit := 0
         octals_found := 0
-        replace /MiniExpAst? := null
+        replace /MiniExpAst_? := null
         non_octals_found := false
         // The first 0-3 octal digits form an octal character escape, the rest
         // are literals.
@@ -270,13 +267,13 @@ class MiniExpCompiler:
             octals_found++
           else:
             pool_index := add_to_constant_pool octal_digit
-            atom /MiniExpAst := Atom pool_index
-            replace = (replace == null) ? atom : Alternative replace atom
+            atom /MiniExpAst_ := Atom_ pool_index
+            replace = (replace == null) ? atom : Alternative_ replace atom
             non_octals_found = true
         if octals_found != 0:
           pool_index := add_to_constant_pool code_unit
-          atom /MiniExpAst := Atom pool_index
-          replace = (replace == null) ? atom : Alternative atom replace
+          atom /MiniExpAst_ := Atom_ pool_index
+          replace = (replace == null) ? atom : Alternative_ atom replace
         b.replace_with_ast replace
       else:
         b.register = first_capture_register + numeric_index * 2
@@ -297,122 +294,122 @@ class MiniExpCompiler:
       extra_constants_.add (str.at --raw it)
     return result
 
-  push_backtrack label/MiniExpLabel -> none:
-    emit_ PUSH_BACKTRACK
+  push_backtrack label/MiniExpLabel_ -> none:
+    emit_ BC_PUSH_BACKTRACK_
     link label
 
   backtrack -> none:
-    emit_ BACKTRACK
+    emit_ BC_BACKTRACK_
 
   push reg/int -> none:
-    emit_ PUSH_REGISTER
+    emit_ BC_PUSH_REGISTER_
         register_number reg
 
   pop reg/int -> none:
-    emit_ POP_REGISTER
+    emit_ BC_POP_REGISTER_
         register_number reg
 
-  goto label/MiniExpLabel -> none:
+  goto label/MiniExpLabel_ -> none:
     if pending_goto_ != label: flush_pending_goto
     pending_goto_ = label
 
   flush_pending_goto -> none:
     if pending_goto_ != null:
-      codes_.add GOTO
+      codes_.add BC_GOTO_
       link pending_goto_
       pending_goto_ = null
 
   backtrack_if_equal register1/int register2/int -> none:
-    emit_ BACKTRACK_EQ
+    emit_ BC_BACKTRACK_EQ_
          register_number register1
          register_number register2
 
   backtrack_if_not_equal register1/int register2/int -> none:
-    emit_ BACKTRACK_NE
+    emit_ BC_BACKTRACK_NE_
         register_number register1
         register_number register2
 
   add_to_register reg/int offset/int -> none:
-    emit_ ADD_TO_REGISTER
+    emit_ BC_ADD_TO_REGISTER_
         register_number reg
         offset
 
   copy_register dest_register/int source_register/int -> none:
-    emit_ COPY_REGISTER
+    emit_ BC_COPY_REGISTER_
         register_number dest_register
         register_number source_register
 
   backtrack_on_back_reference_fail register/int case_sensitive/bool -> none:
-    emit_ BACKTRACK_ON_BACK_REFERENCE
+    emit_ BC_BACKTRACK_ON_BACK_REFERENCE_
         register_number register
         case_sensitive ? 1 : 0
 
   backtrack_if_greater register1/int register2/int -> none:
-    emit_ BACKTRACK_GT
+    emit_ BC_BACKTRACK_GT_
         register_number register1
         register_number register2
 
-  goto_if_greater_equal register1/int register2/int label/MiniExpLabel -> none:
-    emit_ GOTO_GE
+  goto_if_greater_equal register1/int register2/int label/MiniExpLabel_ -> none:
+    emit_ BC_GOTO_GE_
         register_number register1
         register_number register2
     link label
 
   backtrack_if_no_match constant_pool_offset/int -> none:
-    emit_ BACKTRACK_IF_NO_MATCH constant_pool_offset
+    emit_ BC_BACKTRACK_IF_NO_MATCH_ constant_pool_offset
 
   backtrack_if_in_range from/int to/int -> none:
-    emit_ BACKTRACK_IF_IN_RANGE from to
+    emit_ BC_BACKTRACK_IF_IN_RANGE_ from to
 
-  goto_if_matches char_code/int label/MiniExpLabel -> none:
-    emit_ GOTO_IF_MATCH  char_code
+  goto_if_matches char_code/int label/MiniExpLabel_ -> none:
+    emit_ BC_GOTO_IF_MATCH_  char_code
     link label
 
-  goto_if_in_range from/int to/int label/MiniExpLabel -> none:
+  goto_if_in_range from/int to/int label/MiniExpLabel_ -> none:
     if from == to:
       goto_if_matches from label
     else:
-      emit_ GOTO_IF_IN_RANGE from to
+      emit_ BC_GOTO_IF_IN_RANGE_ from to
       link label
 
-  goto_if_unicode_in_range from/int to/int label/MiniExpLabel -> none:
-    emit_ GOTO_IF_UNICODE_IN_RANGE from to
+  goto_if_unicode_in_range from/int to/int label/MiniExpLabel_ -> none:
+    emit_ BC_GOTO_IF_UNICODE_IN_RANGE_ from to
     link label
 
   // Adds a number of UTF-8 encoded runes to the current position, and stores
   // the result in the given destination register.  Can also step backwards.
   advance_by_rune_width destination_register/int count/int -> none:
-    emit_ ADVANCE_BY_RUNE_WIDTH destination_register count
+    emit_ BC_ADVANCE_BY_RUNE_WIDTH_ destination_register count
 
   backtrack_if_not_at_word_boundary -> none:
-    non_word_on_left := MiniExpLabel
-    word_on_left := MiniExpLabel
-    at_word_boundary := MiniExpLabel
-    do_backtrack := MiniExpLabel
+    non_word_on_left := MiniExpLabel_
+    word_on_left := MiniExpLabel_
+    at_word_boundary := MiniExpLabel_
+    do_backtrack := MiniExpLabel_
 
-    emit_ GOTO_EQ CURRENT_POSITION ZERO_REGISTER
+    emit_ BC_GOTO_EQ_ CURRENT_POSITION_ ZERO_REGISTER_
     link non_word_on_left
-    emit_ GOTO_IF_WORD_CHARACTER -1
+    emit_ BC_GOTO_IF_WORD_CHARACTER_ -1
     link word_on_left
 
     bind non_word_on_left
-    emit_ BACKTRACK_EQ CURRENT_POSITION STRING_LENGTH
-    emit_ GOTO_IF_WORD_CHARACTER 0
+    emit_ BC_BACKTRACK_EQ_ CURRENT_POSITION_ STRING_LENGTH_
+    emit_ BC_GOTO_IF_WORD_CHARACTER_ 0
     link at_word_boundary
     bind do_backtrack
     backtrack
 
     bind word_on_left
-    emit_ GOTO_EQ CURRENT_POSITION STRING_LENGTH
+    emit_ BC_GOTO_EQ_ CURRENT_POSITION_ STRING_LENGTH_
     link at_word_boundary
-    emit_ GOTO_IF_WORD_CHARACTER 0
+    emit_ BC_GOTO_IF_WORD_CHARACTER_ 0
     link do_backtrack
 
     bind at_word_boundary
 
-// MiniExpAnalysis objects reflect properties of an AST subtree.  They are
+// MiniExpAnalysis_ objects reflect properties of an AST subtree.  They are
 // immutable and are reused to some extent.
-class MiniExpAnalysis:
+class MiniExpAnalysis_:
   // Can this subtree match an empty string?  If we know that's not possible,
   // we can optimize away the test that ensures we are making progress when we
   // match repetitions.
@@ -440,13 +437,13 @@ class MiniExpAnalysis:
     else:
       return left + right  // List concatenation.
 
-  static combine_fixed_lengths left/MiniExpAnalysis right/MiniExpAnalysis -> int?:
+  static combine_fixed_lengths left/MiniExpAnalysis_ right/MiniExpAnalysis_ -> int?:
     if left.fixed_length == null or right.fixed_length == null:
       return null
     else:
       return left.fixed_length + right.fixed_length
 
-  constructor.orr left/MiniExpAnalysis right/MiniExpAnalysis:
+  constructor.orr left/MiniExpAnalysis_ right/MiniExpAnalysis_:
     can_match_empty = left.can_match_empty or right.can_match_empty
     // Even if both alternatives are the same length we can't handle a
     // disjunction without pushing backtracking information on the stack.
@@ -454,7 +451,7 @@ class MiniExpAnalysis:
     anchored = left.anchored and right.anchored
     registers_to_save = combine_registers left.registers_to_save right.registers_to_save
 
-  constructor.andd left/MiniExpAnalysis right/MiniExpAnalysis:
+  constructor.andd left/MiniExpAnalysis_ right/MiniExpAnalysis_:
     can_match_empty = left.can_match_empty and right.can_match_empty
     fixed_length = combine_fixed_lengths left right
     anchored = left.anchored
@@ -472,13 +469,13 @@ class MiniExpAnalysis:
     anchored = true
     registers_to_save = null
 
-  constructor.lookahead body_analysis/MiniExpAnalysis positive/bool:
+  constructor.lookahead body_analysis/MiniExpAnalysis_ positive/bool:
     can_match_empty = true
     fixed_length = 0
     anchored = positive and body_analysis.anchored
     registers_to_save = body_analysis.registers_to_save
 
-  constructor.quantifier body_analysis/MiniExpAnalysis min/int max/int? regs/List/*<int>*/:
+  constructor.quantifier body_analysis/MiniExpAnalysis_ min/int max/int? regs/List/*<int>*/:
     can_match_empty = min == 0 or body_analysis.can_match_empty
     fixed_length = (min == 1 and max == 1) ? body_analysis.fixed_length : null
     anchored = min > 0 and body_analysis.anchored
@@ -496,7 +493,7 @@ class MiniExpAnalysis:
     anchored = false
     registers_to_save = null
 
-  constructor.capture body_analysis/MiniExpAnalysis start/int end/int:
+  constructor.capture body_analysis/MiniExpAnalysis_ start/int end/int:
     can_match_empty = body_analysis.can_match_empty
     // We can't generate a capture without pushing backtracking information
     // on the stack.
@@ -504,7 +501,7 @@ class MiniExpAnalysis:
     anchored = body_analysis.anchored
     registers_to_save = combine_registers body_analysis.registers_to_save [start, end]
 
-abstract class MiniExpAst:
+abstract class MiniExpAst_:
   // When generating code for an AST, note that:
   // * The previous code may fall through to this AST, but it might also
   //   branch to it.  The label has always been bound just before generate
@@ -515,90 +512,90 @@ abstract class MiniExpAst:
   //   push anything else, then you have to push a backtrack location that will
   //   clean it up.  On entry you can assume there is a backtrack pair on the
   //   top of the stack.
-  abstract generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none
+  abstract generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none
 
-  abstract analyze compiler/MiniExpCompiler -> MiniExpAnalysis
+  abstract analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_
 
   // Label is bound at the entry point for the AST tree.
-  label ::= MiniExpLabel
+  label ::= MiniExpLabel_
 
-  case_expand compiler/MiniExpCompiler -> MiniExpAst:
+  case_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
     return this
 
-class Disjunction extends MiniExpAst:
-  left_/MiniExpAst ::= ?
-  right_/MiniExpAst ::= ?
+class Disjunction_ extends MiniExpAst_:
+  left_/MiniExpAst_ ::= ?
+  right_/MiniExpAst_ ::= ?
 
   constructor .left_ .right_:
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
-    try_right := MiniExpLabel
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
+    try_right := MiniExpLabel_
     compiler.push_backtrack try_right
     compiler.generate left_ on_success
     compiler.bind try_right
     compiler.generate right_ on_success
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    return MiniExpAnalysis.orr
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    return MiniExpAnalysis_.orr
         left_.analyze compiler
         right_.analyze compiler
 
-  case_expand compiler/MiniExpCompiler -> Disjunction:
+  case_expand compiler/MiniExpCompiler_ -> Disjunction_:
     l := left_.case_expand compiler
     r := right_.case_expand compiler
     if l == left_ and r == right_: return this
-    return Disjunction l r
+    return Disjunction_ l r
 
-class EmptyAlternative extends MiniExpAst:
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
+class EmptyAlternative_ extends MiniExpAst_:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
     compiler.goto on_success
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    return MiniExpAnalysis.empty
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    return MiniExpAnalysis_.empty
 
-class Alternative extends MiniExpAst:
-  left_/MiniExpAst ::= ?
-  right_/MiniExpAst ::= ?
+class Alternative_ extends MiniExpAst_:
+  left_/MiniExpAst_ ::= ?
+  right_/MiniExpAst_ ::= ?
 
   constructor .left_ .right_:
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
     compiler.generate left_ right_.label
     compiler.generate right_ on_success
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    return MiniExpAnalysis.andd
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    return MiniExpAnalysis_.andd
         left_.analyze compiler
         right_.analyze compiler
 
-  case_expand compiler/MiniExpCompiler -> Alternative:
+  case_expand compiler/MiniExpCompiler_ -> Alternative_:
     l := left_.case_expand compiler
     r := right_.case_expand compiler
     if l == left_ and r == right_: return this
-    return Alternative l r
+    return Alternative_ l r
 
-abstract class Assertion extends MiniExpAst:
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    return MiniExpAnalysis.empty
+abstract class Assertion extends MiniExpAst_:
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    return MiniExpAnalysis_.empty
 
-class AtStart extends Assertion:
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
-    compiler.backtrack_if_not_equal CURRENT_POSITION ZERO_REGISTER
+class AtStart_ extends Assertion:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
+    compiler.backtrack_if_not_equal CURRENT_POSITION_ ZERO_REGISTER_
     compiler.goto on_success
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    return MiniExpAnalysis.at_start
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    return MiniExpAnalysis_.at_start
 
-class AtEnd extends Assertion:
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
-    compiler.backtrack_if_not_equal CURRENT_POSITION STRING_LENGTH
+class AtEnd_ extends Assertion:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
+    compiler.backtrack_if_not_equal CURRENT_POSITION_ STRING_LENGTH_
     compiler.goto on_success
 
-abstract class MultiLineAssertion extends Assertion:
-  backtrack_if_not_newline compiler/MiniExpCompiler -> none:
+abstract class MultiLineAssertion_ extends Assertion:
+  backtrack_if_not_newline compiler/MiniExpCompiler_ -> none:
     compiler.backtrack_if_in_range
         '\r' + 1
-        CHAR_CODE_LINE_SEPARATOR - 1
+        CHAR_CODE_LINE_SEPARATOR_ - 1
     compiler.backtrack_if_in_range
         0
         '\n' - 1
@@ -606,32 +603,32 @@ abstract class MultiLineAssertion extends Assertion:
         '\n' + 1
         '\r' - 1
     compiler.backtrack_if_in_range
-        CHAR_CODE_PARAGRAPH_SEPARATOR + 1
+        CHAR_CODE_PARAGRAPH_SEPARATOR_ + 1
         0xffff
 
-class AtBeginningOfLine extends MultiLineAssertion:
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
-    compiler.goto_if_greater_equal ZERO_REGISTER CURRENT_POSITION on_success
+class AtBeginningOfLine_ extends MultiLineAssertion_:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
+    compiler.goto_if_greater_equal ZERO_REGISTER_ CURRENT_POSITION_ on_success
     // We need to look one back to see if there was a newline there.  If we
     // backtrack, then that also restores the current position, but if we don't
     // backtrack, we have to fix it again.
-    compiler.add_to_register CURRENT_POSITION -1
+    compiler.add_to_register CURRENT_POSITION_ -1
     backtrack_if_not_newline compiler
-    compiler.add_to_register CURRENT_POSITION 1
+    compiler.add_to_register CURRENT_POSITION_ 1
     compiler.goto on_success
 
-class AtEndOfLine extends MultiLineAssertion:
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
-    compiler.goto_if_greater_equal CURRENT_POSITION STRING_LENGTH on_success
+class AtEndOfLine_ extends MultiLineAssertion_:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
+    compiler.goto_if_greater_equal CURRENT_POSITION_ STRING_LENGTH_ on_success
     backtrack_if_not_newline compiler
     compiler.goto on_success
 
-class WordBoundary extends Assertion:
+class WordBoundary_ extends Assertion:
   positive_ /bool ::= ?
 
   constructor .positive_:
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
     // Positive word boundaries are much more common that negative ones, so we
     // will allow ourselves to generate some pretty horrible code for the
     // negative ones.
@@ -642,49 +639,49 @@ class WordBoundary extends Assertion:
       compiler.goto on_success
     else:
       // Pop the two stack position of the unneeded backtrack.
-      compiler.pop CURRENT_POSITION
-      compiler.pop CURRENT_POSITION
+      compiler.pop CURRENT_POSITION_
+      compiler.pop CURRENT_POSITION_
       // This overwrites the current position with the correct value.
       compiler.backtrack
 
-class LookAhead extends Assertion:
+class LookAhead_ extends Assertion:
   positive_ /bool ::= ?
-  body_/MiniExpAst ::= ?
+  body_/MiniExpAst_ ::= ?
   subtree_registers_/List?/*<int>*/ := null
 
   saved_stack_pointer_register_/int
   saved_position_/int
 
-  constructor .positive_ .body_ compiler/MiniExpCompiler:
+  constructor .positive_ .body_ compiler/MiniExpCompiler_:
     saved_stack_pointer_register_ = compiler.allocate_working_register
     saved_position_ = compiler.allocate_working_register
 
   constructor.private_ .positive_ .body_ .saved_stack_pointer_register_ .saved_position_:
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
     // Lookahead.  Even if the subexpression succeeds, the current position is
     // reset, and the backtracking stack is unwound so that we can never
     // backtrack into the lookahead.  On a failure of the subexpression, the
     // stack will be naturally unwound.
-    body_succeeded := MiniExpLabel
-    succeed_on_failure := MiniExpLabel
-    undo_captures/MiniExpLabel? := null
-    compiler.copy_register saved_stack_pointer_register_ STACK_POINTER
-    compiler.copy_register saved_position_ CURRENT_POSITION
+    body_succeeded := MiniExpLabel_
+    succeed_on_failure := MiniExpLabel_
+    undo_captures/MiniExpLabel_? := null
+    compiler.copy_register saved_stack_pointer_register_ STACK_POINTER_
+    compiler.copy_register saved_position_ CURRENT_POSITION_
     if not positive_:
       compiler.push_backtrack succeed_on_failure
     compiler.generate body_ body_succeeded
 
     compiler.bind body_succeeded
-    compiler.copy_register STACK_POINTER saved_stack_pointer_register_
-    compiler.copy_register CURRENT_POSITION saved_position_
+    compiler.copy_register STACK_POINTER_ saved_stack_pointer_register_
+    compiler.copy_register CURRENT_POSITION_ saved_position_
     if not positive_:
       // For negative lookahead always zap the captures when the body succeeds
       // and the lookahead thus fails.  The captures are only needed for any
       // backrefs inside the negative lookahead.
       if subtree_registers_ != null:
         subtree_registers_.do: | register |
-          compiler.copy_register register NO_POSITION_REGISTER
+          compiler.copy_register register NO_POSITION_REGISTER_
       compiler.backtrack
       compiler.bind succeed_on_failure
     else:
@@ -693,7 +690,7 @@ class LookAhead extends Assertion:
       // this point we have to undo any captures that happened in there.
       // Register a backtrack to do that before continuing.
       if subtree_registers_ != null and not subtree_registers_.is_empty:
-        undo_captures = MiniExpLabel
+        undo_captures = MiniExpLabel_
         compiler.push_backtrack undo_captures
 
     compiler.goto on_success
@@ -701,24 +698,24 @@ class LookAhead extends Assertion:
     if undo_captures != null:
       compiler.bind undo_captures
       subtree_registers_.do: | register |
-        compiler.copy_register register NO_POSITION_REGISTER
+        compiler.copy_register register NO_POSITION_REGISTER_
       compiler.backtrack
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    body_analysis/MiniExpAnalysis := body_.analyze compiler
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    body_analysis/MiniExpAnalysis_ := body_.analyze compiler
     subtree_registers_ = body_analysis.registers_to_save
-    return MiniExpAnalysis.lookahead body_analysis positive_
+    return MiniExpAnalysis_.lookahead body_analysis positive_
 
-  case_expand compiler/MiniExpCompiler -> LookAhead:
+  case_expand compiler/MiniExpCompiler_ -> LookAhead_:
     b := body_.case_expand compiler
     if b == body_: return this
-    return LookAhead.private_ positive_ b saved_stack_pointer_register_ saved_position_
+    return LookAhead_.private_ positive_ b saved_stack_pointer_register_ saved_position_
 
-class Quantifier extends MiniExpAst:
+class Quantifier_ extends MiniExpAst_:
   min_ /int? ::= ?
   max_ /int? ::= ?
   greedy_ /bool ::= ?
-  body_/MiniExpAst ::= ?
+  body_/MiniExpAst_ ::= ?
   counter_register_/int := -1
   start_of_match_register_/int? := null  // Implements 21.2.2.5.1 note 4.
   min_register_/int? := null
@@ -734,8 +731,8 @@ class Quantifier extends MiniExpAst:
       --min /int?
       --max /int?
       --greedy /bool
-      --body /MiniExpAst
-      --compiler /MiniExpCompiler:
+      --body /MiniExpAst_
+      --compiler /MiniExpCompiler_:
     min_ = min
     max_ = max
     greedy_ = greedy
@@ -749,7 +746,7 @@ class Quantifier extends MiniExpAst:
       --min /int?
       --max /int?
       --greedy /bool
-      --body /MiniExpAst
+      --body /MiniExpAst_
       --counter_register /int
       --start_of_match_register /int?
       --min_register /int?
@@ -774,19 +771,19 @@ class Quantifier extends MiniExpAst:
   // We fall through to the top of this, when it is time to match the body of
   // the quantifier.  If the body matches successfully, we should go to
   // on_body_success, otherwise clean up and backtrack.
-  generate_common compiler/MiniExpCompiler on_body_success/MiniExpLabel -> none:
+  generate_common compiler/MiniExpCompiler_ on_body_success/MiniExpLabel_ -> none:
     need_to_catch_didnt_match/bool := greedy_ or body_can_match_empty_ or
         counter_check_ or save_and_restore_registers_
-    didnt_match := MiniExpLabel
+    didnt_match := MiniExpLabel_
 
     if save_and_restore_registers_:
       subtree_registers_that_need_saving_.do: | reg |
         compiler.push reg
-        compiler.copy_register reg NO_POSITION_REGISTER
+        compiler.copy_register reg NO_POSITION_REGISTER_
 
     if body_can_match_empty_:
       compiler.push start_of_match_register_
-      compiler.copy_register start_of_match_register_ CURRENT_POSITION
+      compiler.copy_register start_of_match_register_ CURRENT_POSITION_
 
     if need_to_catch_didnt_match:
       compiler.push_backtrack didnt_match
@@ -809,14 +806,14 @@ class Quantifier extends MiniExpAst:
           compiler.pop subtree_registers_that_need_saving_[i]
       if not greedy_: compiler.backtrack
 
-  generate_fixed_length_greedy compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
-    new_iteration := MiniExpLabel
-    cant_advance_more := MiniExpLabel
-    continuation_failed := MiniExpLabel
+  generate_fixed_length_greedy compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
+    new_iteration := MiniExpLabel_
+    cant_advance_more := MiniExpLabel_
+    continuation_failed := MiniExpLabel_
 
     // Save the current position, so we know when the quantifier has been
     // unwound enough.
-    compiler.copy_register optimized_greedy_register_ CURRENT_POSITION
+    compiler.copy_register optimized_greedy_register_ CURRENT_POSITION_
     if min_ != 0:
       assert: min_ < 3 and body_length_ < 3
       compiler.advance_by_rune_width optimized_greedy_register_ (min_ * body_length_)
@@ -833,7 +830,7 @@ class Quantifier extends MiniExpAst:
 
     // The loop.
     compiler.bind new_iteration
-    compiler.copy_register save_position_register_ CURRENT_POSITION
+    compiler.copy_register save_position_register_ CURRENT_POSITION_
     compiler.generate body_ new_iteration
 
     // The greedy quantifier has eaten as much as it can.  Time to try the
@@ -844,21 +841,21 @@ class Quantifier extends MiniExpAst:
       compiler.backtrack_if_greater optimized_greedy_register_ save_position_register_
 
     compiler.add_to_register save_position_register_ body_length_
-    compiler.copy_register CURRENT_POSITION save_position_register_
+    compiler.copy_register CURRENT_POSITION_ save_position_register_
 
     // The continuation of the regexp failed.  We backtrack the greedy
     // quantifier by one step and retry.
     compiler.bind continuation_failed
-    compiler.advance_by_rune_width CURRENT_POSITION -body_length_
+    compiler.advance_by_rune_width CURRENT_POSITION_ -body_length_
     // If we got back to where the quantifier started matching, then jump
     // to the continuation (we haven't pushed a backtrack, so if that fails, it
     // will backtrack further).
     // We don't have goto_if_equal, so use goto_if_greater_equal.
-    compiler.goto_if_greater_equal optimized_greedy_register_ CURRENT_POSITION on_success
+    compiler.goto_if_greater_equal optimized_greedy_register_ CURRENT_POSITION_ on_success
     compiler.push_backtrack continuation_failed
     compiler.goto on_success
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
     // We optimize loops of the form .* to avoid big backtrack stacks.
     if is_optimized_greedy_:
       generate_fixed_length_greedy compiler on_success
@@ -868,14 +865,14 @@ class Quantifier extends MiniExpAst:
       return
     // The above means if max_ is 1 then min_ must be 0, which simplifies
     // things.
-    body_matched/MiniExpLabel := max_ == 1 ? on_success : MiniExpLabel
-    check_empty_match_label/MiniExpLabel? := null
-    on_body_success/MiniExpLabel := body_matched
+    body_matched/MiniExpLabel_ := max_ == 1 ? on_success : MiniExpLabel_
+    check_empty_match_label/MiniExpLabel_? := null
+    on_body_success/MiniExpLabel_ := body_matched
     if body_can_match_empty_:
-      check_empty_match_label = MiniExpLabel
+      check_empty_match_label = MiniExpLabel_
       on_body_success = check_empty_match_label
     if counter_check_:
-      compiler.copy_register counter_register_ ZERO_REGISTER
+      compiler.copy_register counter_register_ ZERO_REGISTER_
 
     if body_matched != on_success:
       compiler.bind body_matched
@@ -890,14 +887,14 @@ class Quantifier extends MiniExpAst:
         compiler.goto on_success
     else:
       // Non-greedy.
-      try_body := MiniExpLabel
+      try_body := MiniExpLabel_
 
       if min_check_ min_:
         // If there's a minimum and we haven't reached it we should not try to
         // run the continuation, but go straight to the body_.
         // TODO(erikcorry): if we had a goto_if_less we could save instructions
         // here.
-        jump_to_continuation := MiniExpLabel
+        jump_to_continuation := MiniExpLabel_
         compiler.goto_if_greater_equal counter_register_ min_register_ jump_to_continuation
         compiler.goto try_body
         compiler.bind jump_to_continuation
@@ -914,11 +911,11 @@ class Quantifier extends MiniExpAst:
       compiler.bind check_empty_match_label
       if min_check_ min_:
         compiler.goto_if_greater_equal min_register_ counter_register_ body_matched
-      compiler.backtrack_if_equal start_of_match_register_ CURRENT_POSITION
+      compiler.backtrack_if_equal start_of_match_register_ CURRENT_POSITION_
       compiler.goto body_matched
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    body_analysis/MiniExpAnalysis := body_.analyze compiler
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    body_analysis/MiniExpAnalysis_ := body_.analyze compiler
     subtree_registers_that_need_saving_ = body_analysis.registers_to_save
     body_length_ = body_analysis.fixed_length
     if body_analysis.can_match_empty:
@@ -930,7 +927,7 @@ class Quantifier extends MiniExpAst:
       optimized_greedy_register_ = compiler.allocate_working_register
       save_position_register_ = compiler.allocate_working_register
     my_regs/List/*<int>*/ := [counter_register_, optimized_greedy_register_, save_position_register_].filter: it != null
-    return MiniExpAnalysis.quantifier body_analysis min_ max_ my_regs
+    return MiniExpAnalysis_.quantifier body_analysis min_ max_ my_regs
 
   static max_check_ max -> bool: return max != 1 and max != null
 
@@ -944,10 +941,10 @@ class Quantifier extends MiniExpAst:
     return subtree_registers_that_need_saving_ != null and
            not subtree_registers_that_need_saving_.is_empty
 
-  case_expand compiler/MiniExpCompiler -> Quantifier:
+  case_expand compiler/MiniExpCompiler_ -> Quantifier_:
     b := body_.case_expand compiler
     if b == body_: return this
-    return Quantifier.private_
+    return Quantifier_.private_
         --min=min_
         --max=max_
         --greedy=greedy_
@@ -961,19 +958,19 @@ class Quantifier extends MiniExpAst:
         --save_position_register=save_position_register_
         --body_length=body_length_
 
-class Atom extends MiniExpAst:
+class Atom_ extends MiniExpAst_:
   constant_index_ /int ::= ?
 
   constructor .constant_index_:
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
     code_unit/int := compiler.constant_pool_byte constant_index_
-    compiler.backtrack_if_equal CURRENT_POSITION STRING_LENGTH
+    compiler.backtrack_if_equal CURRENT_POSITION_ STRING_LENGTH_
     compiler.backtrack_if_no_match constant_index_
-    compiler.add_to_register CURRENT_POSITION 1
+    compiler.add_to_register CURRENT_POSITION_ 1
     compiler.goto on_success
 
-  case_expand compiler/MiniExpCompiler -> MiniExpAst:
+  case_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
     if compiler.case_sensitive:
       return utf_expand compiler
     char_code/int := compiler.constant_pool_entry constant_index_
@@ -981,34 +978,34 @@ class Atom extends MiniExpAst:
     if not equivalence or equivalence.size == 1:
       return utf_expand compiler
     // Need to expand to multiple characters.
-    result := Disjunction
-        (Atom (compiler.add_to_constant_pool equivalence[0])).utf_expand compiler
-        (Atom (compiler.add_to_constant_pool equivalence[1])).utf_expand compiler
+    result := Disjunction_
+        (Atom_ (compiler.add_to_constant_pool equivalence[0])).utf_expand compiler
+        (Atom_ (compiler.add_to_constant_pool equivalence[1])).utf_expand compiler
     if equivalence.size > 2:
-      result = Disjunction
+      result = Disjunction_
           result
-          (Atom (compiler.add_to_constant_pool equivalence[2])).utf_expand compiler
+          (Atom_ (compiler.add_to_constant_pool equivalence[2])).utf_expand compiler
     assert: equivalence <= 3
     return result
 
-  utf_expand compiler/MiniExpCompiler -> MiniExpAst:
-    byte_count := MiniExpCompiler.UTF_FIRST_CHAR_TABLE_[(compiler.constant_pool_byte constant_index_) >> 4]
+  utf_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
+    byte_count := MiniExpCompiler_.UTF_FIRST_CHAR_TABLE_[(compiler.constant_pool_byte constant_index_) >> 4]
     if byte_count == 1: return this
-    result := Alternative
-        Atom constant_index_
-        Atom constant_index_ + 1
+    result := Alternative_
+        Atom_ constant_index_
+        Atom_ constant_index_ + 1
     if byte_count >= 3:
-      result = Alternative
+      result = Alternative_
           result
-          Atom constant_index_ + 2
+          Atom_ constant_index_ + 2
     if byte_count == 4:
-      result = Alternative
+      result = Alternative_
           result
-          Atom constant_index_ + 3
+          Atom_ constant_index_ + 3
     return result
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    return MiniExpAnalysis.atom
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    return MiniExpAnalysis_.atom
 
 class Range_:
   from /int := 0
@@ -1019,7 +1016,7 @@ class Range_:
   stringify -> string:
     return "$from-$to"
 
-class CharClass extends MiniExpAst:
+class CharClass_ extends MiniExpAst_:
   ranges_ /List ::= []
   positive_ /bool ::= ?
 
@@ -1036,14 +1033,14 @@ class CharClass extends MiniExpAst:
     -1,
     '\t', '\r',
     ' ', ' ',
-    CHAR_CODE_NO_BREAK_SPACE, CHAR_CODE_NO_BREAK_SPACE,
-    CHAR_CODE_OGHAM_SPACE_MARK, CHAR_CODE_OGHAM_SPACE_MARK,
-    CHAR_CODE_EN_QUAD, CHAR_CODE_HAIR_SPACE,
-    CHAR_CODE_LINE_SEPARATOR, CHAR_CODE_PARAGRAPH_SEPARATOR,
-    CHAR_CODE_NARROW_NO_BREAK_SPACE, CHAR_CODE_NARROW_NO_BREAK_SPACE,
-    CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE, CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE,
-    CHAR_CODE_IDEOGRAPHIC_SPACE, CHAR_CODE_IDEOGRAPHIC_SPACE,
-    CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE, CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE,
+    CHAR_CODE_NO_BREAK_SPACE_, CHAR_CODE_NO_BREAK_SPACE_,
+    CHAR_CODE_OGHAM_SPACE_MARK_, CHAR_CODE_OGHAM_SPACE_MARK_,
+    CHAR_CODE_EN_QUAD_, CHAR_CODE_HAIR_SPACE_,
+    CHAR_CODE_LINE_SEPARATOR_, CHAR_CODE_PARAGRAPH_SEPARATOR_,
+    CHAR_CODE_NARROW_NO_BREAK_SPACE_, CHAR_CODE_NARROW_NO_BREAK_SPACE_,
+    CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_, CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_,
+    CHAR_CODE_IDEOGRAPHIC_SPACE_, CHAR_CODE_IDEOGRAPHIC_SPACE_,
+    CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_, CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_,
     0x10000]
 
   add_spaces -> none:
@@ -1161,15 +1158,15 @@ class CharClass extends MiniExpAst:
         new_ranges.add last
     return new_ranges
 
-  case_expand compiler/MiniExpCompiler -> MiniExpAst:
+  case_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
     ranges := fix_ranges ranges_ compiler.case_sensitive
-    return CharClass.private_ ranges positive_
+    return CharClass_.private_ ranges positive_
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
-    compiler.backtrack_if_equal CURRENT_POSITION STRING_LENGTH
-    match := MiniExpLabel
-    match_unicode := MiniExpLabel
-    backtrack_on_in_range := MiniExpLabel
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
+    compiler.backtrack_if_equal CURRENT_POSITION_ STRING_LENGTH_
+    match := MiniExpLabel_
+    match_unicode := MiniExpLabel_
+    backtrack_on_in_range := MiniExpLabel_
     ranges_.do: | range |
       bytes := utf_8_bytes range.to
       if positive_:
@@ -1186,29 +1183,29 @@ class CharClass extends MiniExpAst:
       compiler.backtrack
       if match_unicode.is_linked:
         compiler.bind match_unicode
-        compiler.advance_by_rune_width CURRENT_POSITION 1
+        compiler.advance_by_rune_width CURRENT_POSITION_ 1
         compiler.goto on_success
       compiler.bind match
-      compiler.add_to_register CURRENT_POSITION 1
+      compiler.add_to_register CURRENT_POSITION_ 1
       compiler.goto on_success
     else:
-      compiler.advance_by_rune_width CURRENT_POSITION 1
+      compiler.advance_by_rune_width CURRENT_POSITION_ 1
       compiler.goto on_success
       if backtrack_on_in_range.is_linked:
         compiler.bind backtrack_on_in_range
         compiler.backtrack
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
-    return MiniExpAnalysis.atom
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
+    return MiniExpAnalysis_.atom
 
 // This class is used for all backslashes followed by numbers.  For web
 // compatibility, if the number (interpreted as decimal) is smaller than the
 // number of captures, then it will be interpreted as a back reference.
 // Otherwise the number will be interpreted as an octal character code escape.
-class BackReference extends MiniExpAst:
+class BackReference_ extends MiniExpAst_:
   back_reference_index_/string
   register_/int? := null
-  ast_that_replaces_us_/MiniExpAst? := null
+  ast_that_replaces_us_/MiniExpAst_? := null
 
   constructor .back_reference_index_:
 
@@ -1217,69 +1214,95 @@ class BackReference extends MiniExpAst:
   set register r/int -> none:
     register_ = r
 
-  replace_with_ast ast/MiniExpAst -> none:
+  replace_with_ast ast/MiniExpAst_ -> none:
     ast_that_replaces_us_ = ast
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
     if register_ == null:
       compiler.generate ast_that_replaces_us_ on_success
     else:
       compiler.backtrack_on_back_reference_fail register_ compiler.case_sensitive
       compiler.goto on_success
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
     compiler.add_back_reference this
-    return MiniExpAnalysis.know_nothing
+    return MiniExpAnalysis_.know_nothing
 
-class Capture extends MiniExpAst:
+class Capture_ extends MiniExpAst_:
   capture_count_ /int ::= ?
-  body_/MiniExpAst ::= ?
+  body_/MiniExpAst_ ::= ?
   start_register_/int? := null
   end_register_/int? := null
 
   constructor .capture_count_ .body_:
 
-  allocate_registers compiler/MiniExpCompiler -> none:
+  allocate_registers compiler/MiniExpCompiler_ -> none:
     if start_register_ == null:
       start_register_ = compiler.allocate_capture_registers
       end_register_ = start_register_ - 1
 
-  generate compiler/MiniExpCompiler on_success/MiniExpLabel -> none:
-    undo_start := MiniExpLabel
-    write_end := MiniExpLabel
-    undo_end := MiniExpLabel
-    compiler.copy_register start_register_ CURRENT_POSITION
+  generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
+    undo_start := MiniExpLabel_
+    write_end := MiniExpLabel_
+    undo_end := MiniExpLabel_
+    compiler.copy_register start_register_ CURRENT_POSITION_
     compiler.push_backtrack undo_start
 
     compiler.generate body_ write_end
 
     compiler.bind write_end
-    compiler.copy_register end_register_ CURRENT_POSITION
+    compiler.copy_register end_register_ CURRENT_POSITION_
     compiler.push_backtrack undo_end
     compiler.goto on_success
 
     compiler.bind undo_start
-    compiler.copy_register start_register_ NO_POSITION_REGISTER
+    compiler.copy_register start_register_ NO_POSITION_REGISTER_
     compiler.backtrack
 
     compiler.bind undo_end
-    compiler.copy_register end_register_ NO_POSITION_REGISTER
+    compiler.copy_register end_register_ NO_POSITION_REGISTER_
     compiler.backtrack
 
-  analyze compiler/MiniExpCompiler -> MiniExpAnalysis:
+  analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
     allocate_registers compiler
     body_analysis := body_.analyze compiler
-    return MiniExpAnalysis.capture body_analysis start_register_ end_register_
+    return MiniExpAnalysis_.capture body_analysis start_register_ end_register_
 
 interface Match:
+  /// The regular expression that created this match.
   pattern -> RegExp
+
+  /// The input string in which a match was found.
   input -> string
-  start -> int
-  end -> int
-  group index/int -> string?
+
+  /// The substring of the input that matched the regexp.
+  matched -> string
+
+  /// The start index of the match in the string.
+  index -> int
+
+  /// The end index of the match in the string.
+  end_index -> int
+
+  /**
+  The start index of the nth capture in the string.
+  The 0th capture is the index of the match of the whole regexp.
+  */
+  index index/int -> int?
+
+  /**
+  The end index of the nth capture in the string.
+  The 0th capture is the index of the match of the whole regexp.
+  */
+  end_index index/int -> int?
+
+  /**
+  The string captured by the nth capture.
+  The 0th capture is the entire substring that matched the regexp.
+  */
   operator [] index/int -> string
 
-class MiniExpMatch implements Match:
+class MiniExpMatch_ implements Match:
   pattern/RegExp ::= ?
   input /string ::= ?
   registers_/List/*<int>*/ ::= ?
@@ -1287,21 +1310,30 @@ class MiniExpMatch implements Match:
 
   constructor .pattern .input .registers_ .first_capture_reg_:
 
-  group_count -> int: return (registers_.size - 2 - first_capture_reg_) >> 1
+  capture_count -> int: return (registers_.size - 2 - first_capture_reg_) >> 1
 
-  start -> int: return registers_[first_capture_reg_]
+  matched -> string: return this[0]
 
-  end -> int: return registers_[first_capture_reg_ + 1]
+  index -> int: return registers_[first_capture_reg_]
 
-  group index/int -> string?:
-    if index > group_count:
-      throw "OUT_OF_RANGE"
+  end_index -> int: return registers_[first_capture_reg_ + 1]
+
+  index index/int -> int?:
+    if not 0 <= index <= capture_count: throw "OUT_OF_RANGE"
+    result := registers_[first_capture_reg_ + index * 2]
+    return result == NO_POSITION_ ? null : result
+
+  end_index index/int -> int?:
+    if not 0 <= index <= capture_count: throw "OUT_OF_RANGE"
+    result := registers_[first_capture_reg_ + 1 + index * 2]
+    return result == NO_POSITION_ ? null : result
+
+  operator[] index/int -> string?:
+    if not 0 <= index <= capture_count: throw "OUT_OF_RANGE"
     index *= 2
     index += first_capture_reg_
-    if registers_[index] == NO_POSITION: return null
+    if registers_[index] == NO_POSITION_: return null
     return input.copy registers_[index] registers_[index + 1]
-
-  operator[] index/int -> string?: return group index
 
 interface RegExp:
   pattern -> string
@@ -1314,7 +1346,7 @@ interface RegExp:
   all_matches subject/string start/int [block] -> bool
   trace -> none
 
-  constructor pattern/string --multiline/bool --case_sensitive/bool:
+  constructor pattern/string --multiline/bool=true --case_sensitive/bool=true:
     return MiniExp_ pattern multiline case_sensitive
 
 class MiniExp_ implements RegExp:
@@ -1332,9 +1364,9 @@ class MiniExp_ implements RegExp:
     trace_ = true
 
   constructor .pattern .multiline .case_sensitive:
-    compiler := MiniExpCompiler pattern case_sensitive
-    parser := MiniExpParser compiler pattern multiline
-    ast/MiniExpAst := parser.parse
+    compiler := MiniExpCompiler_ pattern case_sensitive
+    parser := MiniExpParser_ compiler pattern multiline
+    ast/MiniExpAst_ := parser.parse
     generate_code_ compiler ast pattern
 
   match_as_prefix a/string a1/int=0 -> Match?:
@@ -1360,61 +1392,61 @@ class MiniExp_ implements RegExp:
     position := start
     if not 0 <= position <= subject.size: throw "OUT_OF_RANGE"
     while position <= subject.size:
-      current := match_ subject position 0
+      current := (match_ subject position 0) as MiniExpMatch_
       if current == null: return at_least_once
-      if current.start == current.end:
-        position = current.end + 1
+      if current.index == current.end_index:
+        position = current.end_index + 1
       else:
-        position = current.end
+        position = current.end_index
       block.call current
       at_least_once = true
     return at_least_once
 
   match_ a/string start_position/int start_program_counter/int -> Match?:
     registers/List/*<int>*/ := initial_register_values_.copy
-    interpreter := MiniExpInterpreter byte_codes_ constant_pool_ registers trace_
+    interpreter := MiniExpInterpreter_ byte_codes_ constant_pool_ registers trace_
     if not interpreter.interpret a start_position start_program_counter:
       return null
-    return MiniExpMatch this a registers first_capture_register_
+    return MiniExpMatch_ this a registers first_capture_register_
 
-  generate_code_ compiler/MiniExpCompiler ast/MiniExpAst source/string -> none:
+  generate_code_ compiler/MiniExpCompiler_ ast/MiniExpAst_ source/string -> none:
     // Top level capture regs.
     top_level_capture_reg/int := compiler.allocate_capture_registers
 
-    top_analysis/MiniExpAnalysis := ast.analyze compiler
+    top_analysis/MiniExpAnalysis_ := ast.analyze compiler
 
     ast = ast.case_expand compiler
 
     compiler.add_capture_registers
 
-    sticky_entry_point := MiniExpLabel
-    sticky_start := MiniExpLabel
-    fail_sticky := MiniExpLabel
+    sticky_entry_point := MiniExpLabel_
+    sticky_start := MiniExpLabel_
+    fail_sticky := MiniExpLabel_
 
-    start := MiniExpLabel
+    start := MiniExpLabel_
     compiler.bind start
 
-    fail := MiniExpLabel
+    fail := MiniExpLabel_
     compiler.push_backtrack fail
 
     compiler.bind sticky_start
-    compiler.copy_register top_level_capture_reg CURRENT_POSITION
+    compiler.copy_register top_level_capture_reg CURRENT_POSITION_
 
-    succeed := MiniExpLabel
+    succeed := MiniExpLabel_
     compiler.generate ast succeed
 
     compiler.bind fail
     if not top_analysis.anchored:
-      end := MiniExpLabel
-      compiler.goto_if_greater_equal CURRENT_POSITION STRING_LENGTH end
-      compiler.add_to_register CURRENT_POSITION 1
+      end := MiniExpLabel_
+      compiler.goto_if_greater_equal CURRENT_POSITION_ STRING_LENGTH_ end
+      compiler.add_to_register CURRENT_POSITION_ 1
       compiler.goto start
       compiler.bind end
     compiler.bind fail_sticky
     compiler.fail
 
     compiler.bind succeed
-    compiler.copy_register top_level_capture_reg - 1 CURRENT_POSITION
+    compiler.copy_register top_level_capture_reg - 1 CURRENT_POSITION_
     compiler.succeed
 
     compiler.bind sticky_entry_point
@@ -1452,8 +1484,8 @@ LOOK_AHEAD ::= 20
 NEGATIVE_LOOK_AHEAD ::= 21
 OTHER ::= 22
 
-class MiniExpParser:
-  compiler_ /MiniExpCompiler ::= ?
+class MiniExpParser_:
+  compiler_ /MiniExpCompiler_ ::= ?
   source_ /string ::= ?
   multiline_ /bool ::= ?
 
@@ -1473,9 +1505,9 @@ class MiniExpParser:
 
   constructor .compiler_ .source_ .multiline_:
 
-  parse -> MiniExpAst:
+  parse -> MiniExpAst_:
     get_token
-    ast/MiniExpAst := parse_disjunction
+    ast/MiniExpAst_ := parse_disjunction
     expect_token NONE
     return ast
 
@@ -1487,78 +1519,78 @@ class MiniExpParser:
     throw
       FormatException "Error while parsing regexp: $message" source_ position_
 
-  parse_disjunction -> MiniExpAst:
-    ast/MiniExpAst := parse_alternative
+  parse_disjunction -> MiniExpAst_:
+    ast/MiniExpAst_ := parse_alternative
     while accept_token PIPE:
-      ast = Disjunction ast parse_alternative
+      ast = Disjunction_ ast parse_alternative
     return ast
 
   end_of_alternative -> bool:
     return last_token_ == PIPE or last_token_ == R_PAREN or
         last_token_ == NONE
 
-  parse_alternative -> MiniExpAst:
+  parse_alternative -> MiniExpAst_:
     if end_of_alternative:
-      return EmptyAlternative
-    ast/MiniExpAst := parse_term
+      return EmptyAlternative_
+    ast/MiniExpAst_ := parse_term
     while not end_of_alternative:
-      ast = Alternative ast parse_term
+      ast = Alternative_ ast parse_term
     return ast
 
-  try_parse_assertion -> MiniExpAst?:
+  try_parse_assertion -> MiniExpAst_?:
     if accept_token HAT:
-      return multiline_ ? AtBeginningOfLine : AtStart
+      return multiline_ ? AtBeginningOfLine_ : AtStart_
     if accept_token DOLLAR:
-      return multiline_ ? AtEndOfLine : AtEnd
-    if accept_token WORD_BOUNDARY: return WordBoundary true
-    if accept_token NOT_WORD_BOUNDARY: return WordBoundary false
-    lookahead_ast/MiniExpAst? := null
+      return multiline_ ? AtEndOfLine_ : AtEnd_
+    if accept_token WORD_BOUNDARY: return WordBoundary_ true
+    if accept_token NOT_WORD_BOUNDARY: return WordBoundary_ false
+    lookahead_ast/MiniExpAst_? := null
     if accept_token LOOK_AHEAD:
-      lookahead_ast = LookAhead true parse_disjunction compiler_
+      lookahead_ast = LookAhead_ true parse_disjunction compiler_
     else if accept_token NEGATIVE_LOOK_AHEAD:
-      lookahead_ast = LookAhead false parse_disjunction compiler_
+      lookahead_ast = LookAhead_ false parse_disjunction compiler_
     if lookahead_ast != null:
       expect_token R_PAREN
       // The normal syntax does not allow a quantifier here, but the web
       // compatible one does.  Slightly nasty hack for compatibility:
       if peek_token QUANT:
-        quant/MiniExpAst := Quantifier --min=minimum_repeats_ --max=maximum_repeats_ --greedy=last_was_greedy_ --body=lookahead_ast --compiler=compiler_
+        quant/MiniExpAst_ := Quantifier_ --min=minimum_repeats_ --max=maximum_repeats_ --greedy=last_was_greedy_ --body=lookahead_ast --compiler=compiler_
         expect_token QUANT
         return quant
       return lookahead_ast
     return null
 
-  parse_term -> MiniExpAst:
-    ast/MiniExpAst? := try_parse_assertion
+  parse_term -> MiniExpAst_:
+    ast/MiniExpAst_? := try_parse_assertion
     if ast == null:
       ast = parse_atom
       if peek_token QUANT:
-        quant/MiniExpAst := Quantifier --min=minimum_repeats_ --max=maximum_repeats_ --greedy=last_was_greedy_ --body=ast --compiler=compiler_
+        quant/MiniExpAst_ := Quantifier_ --min=minimum_repeats_ --max=maximum_repeats_ --greedy=last_was_greedy_ --body=ast --compiler=compiler_
         expect_token QUANT
         return quant
     return ast
 
-  parse_atom -> MiniExpAst?:
+  parse_atom -> MiniExpAst_?:
     if peek_token OTHER:
-      result := Atom last_token_index_
+      result := Atom_ last_token_index_
       expect_token OTHER
       return result
     if accept_token DOT:
-      ast := CharClass false  // Negative char class.
+      ast := CharClass_ false  // Negative char class.
       if not multiline_:
         ast.add '\n' '\n'
         ast.add '\r' '\r'
-        ast.add CHAR_CODE_LINE_SEPARATOR CHAR_CODE_PARAGRAPH_SEPARATOR
+        ast.add CHAR_CODE_LINE_SEPARATOR_ CHAR_CODE_PARAGRAPH_SEPARATOR_
       return ast
 
     if peek_token BACK_REFERENCE:
-      back_ref := BackReference last_back_reference_index_
+      back_ref := BackReference_ last_back_reference_index_
       expect_token BACK_REFERENCE
       return back_ref
 
     if accept_token L_PAREN:
-      ast/MiniExpAst := parse_disjunction
-      ast = Capture capture_count_++ ast
+      ast/MiniExpAst_ := parse_disjunction
+      ast = Capture_ capture_count_++ ast
       expect_token R_PAREN
       return ast
     if accept_token NON_CAPTURING:
@@ -1566,17 +1598,17 @@ class MiniExpParser:
       expect_token R_PAREN
       return ast
 
-    char_class/CharClass? := null
+    char_class/CharClass_? := null
     digit_char_class := false
     if accept_token WORD_CHARACTER:
-      char_class = CharClass true
+      char_class = CharClass_ true
     else if accept_token NOT_WORD_CHARACTER:
-      char_class = CharClass false
+      char_class = CharClass_ false
     else if accept_token DIGIT:
-      char_class = CharClass true
+      char_class = CharClass_ true
       digit_char_class = true
     else if accept_token NOT_DIGIT:
-      char_class = CharClass false
+      char_class = CharClass_ false
       digit_char_class = true
     if char_class != null:
       char_class.add '0' '9'
@@ -1587,9 +1619,9 @@ class MiniExpParser:
       return char_class
 
     if accept_token WHITESPACE:
-      char_class = CharClass true
+      char_class = CharClass_ true
     else if accept_token NOT_WHITESPACE:
-      char_class = CharClass false
+      char_class = CharClass_ false
     if char_class != null:
       char_class.add_spaces
       return char_class
@@ -1599,14 +1631,14 @@ class MiniExpParser:
     error "Unexpected token $last_token_"
     return null
 
-  parse_character_class -> MiniExpAst:
-    char_class/CharClass := ?
+  parse_character_class -> MiniExpAst_:
+    char_class/CharClass_ := ?
 
     if has_ position_ and (at_ position_) == '^':
       position_++
-      char_class = CharClass false
+      char_class = CharClass_ false
     else:
-      char_class = CharClass true
+      char_class = CharClass_ true
 
     add_char_code := : | code |
       if code < 0:
@@ -1752,12 +1784,12 @@ class MiniExpParser:
   }
 
   static CONTROL_CHARACTERS ::= {
-    'b': CHAR_CODE_BACKSPACE,
-    'f': CHAR_CODE_FORM_FEED,
+    'b': '\b',
+    'f': '\f',
     'n': '\n',
     'r': '\r',
     't': '\t',
-    'v': CHAR_CODE_VERTICAL_TAB,
+    'v': '\v',
   }
 
   static token_from_charcode code/int -> int:
@@ -1941,35 +1973,35 @@ class MiniExpParser:
     else:
       last_was_greedy_ = true
 
-disassemble codes/List/*<int>*/ -> none:
+disassemble_ codes/List/*<int>*/ -> none:
   print("\nDisassembly\n")
   labels/List/*<bool>*/ := List codes.size
   for i := 0; i < codes.size; :
     code/int := codes[i]
-    if code == PUSH_BACKTRACK or code == GOTO:
+    if code == BC_PUSH_BACKTRACK_ or code == BC_GOTO_:
       pushed/int := codes[i + 1]
       if pushed >= 0 and pushed < codes.size: labels[pushed] = true
-    i += BYTE_CODE_NAMES[code * 3 + 1] + BYTE_CODE_NAMES[code * 3 + 2] + 1
+    i += BYTE_CODE_NAMES_[code * 3 + 1] + BYTE_CODE_NAMES_[code * 3 + 2] + 1
   for i := 0; i < codes.size; :
     if labels[i]: print "$i:"
-    i += disassemble_single_instruction codes i null
+    i += disassemble_single_instruction_ codes i null
   print "\nEnd Disassembly\n"
 
-disassemble_single_instruction codes/List/*<int>*/ i/int registers/List?/*<int>*/ -> int:
+disassemble_single_instruction_ codes/List/*<int>*/ i/int registers/List?/*<int>*/ -> int:
     code/int := codes[i]
-    regs/int := BYTE_CODE_NAMES[code * 3 + 1]
-    other_args/int := BYTE_CODE_NAMES[code * 3 + 2]
-    line/string := "$i: $BYTE_CODE_NAMES[code * 3]"
+    regs/int := BYTE_CODE_NAMES_[code * 3 + 1]
+    other_args/int := BYTE_CODE_NAMES_[code * 3 + 2]
+    line/string := "$i: $BYTE_CODE_NAMES_[code * 3]"
     for j := 0; j < regs; j++:
       reg/int := codes[i + 1 + j]
-      line = "$line $REGISTER_NAMES[reg]"
+      line = "$line $REGISTER_NAMES_[reg]"
       if registers != null: line = "$line:$registers[reg]"
     for j := 0; j < other_args; j++:
       line = line + " " + codes[i + 1 + regs + j].to_string
     print line
     return regs + other_args + 1
 
-class MiniExpInterpreter:
+class MiniExpInterpreter_:
   byte_codes_/List/*<int>*/ ::= ?
   constant_pool_ /ByteArray ::= ?
   registers_/List/*<int>*/ ::= ?
@@ -1981,100 +2013,111 @@ class MiniExpInterpreter:
   stack_pointer/int := 0
 
   interpret subject/string start_position/int program_counter/int -> bool:
-    registers_[STRING_LENGTH] = subject.size
-    registers_[CURRENT_POSITION] = start_position
+    registers_[STRING_LENGTH_] = subject.size
+    registers_[CURRENT_POSITION_] = start_position
     while true:
       byte_code := byte_codes_[program_counter]
       if trace_:
-        print "\"$subject\" $program_counter: $BYTE_CODE_NAMES[byte_code * 3] position=$registers_[CURRENT_POSITION]"
-        print (" " * (registers_[CURRENT_POSITION] + 1)) + "^"
+        reg_args := BYTE_CODE_NAMES_[byte_code * 3 + 1]
+        other_args := BYTE_CODE_NAMES_[byte_code * 3 + 2]
+        arg_description := []
+        reg_args.repeat:
+          reg := byte_codes_[program_counter + it + 1]
+          if reg < FIXED_REGISTERS_:
+            arg_description.add REGISTER_NAMES_[reg]
+          else:
+            arg_description.add "r$reg"
+        other_args.repeat: arg_description.add "$(byte_codes_[program_counter + reg_args + it + 1])"
+        print "\"$subject\" $program_counter: $BYTE_CODE_NAMES_[byte_code * 3]($(arg_description.join ", ")) position=$registers_[CURRENT_POSITION_]"
+        print (" " * (registers_[CURRENT_POSITION_] + 1)) + "^"
+        print registers_
       program_counter++
       // TODO: Faster implementation.
-      if byte_code == GOTO:
+      if byte_code == BC_GOTO_:
         program_counter = byte_codes_[program_counter]
-      else if byte_code == PUSH_REGISTER:
+      else if byte_code == BC_PUSH_REGISTER_:
         reg/int := registers_[byte_codes_[program_counter++]]
         if stack_pointer == stack.size:
           stack.add reg
           stack_pointer++
         else:
           stack[stack_pointer++] = reg
-      else if byte_code == PUSH_BACKTRACK:
+      else if byte_code == BC_PUSH_BACKTRACK_:
         value/int := byte_codes_[program_counter++]
         if stack_pointer == stack.size:
           stack.add value
           stack_pointer++
         else:
           stack[stack_pointer++] = value
-        position/int := registers_[CURRENT_POSITION]
+        position/int := registers_[CURRENT_POSITION_]
         if stack_pointer == stack.size:
           stack.add position
           stack_pointer++
         else:
           stack[stack_pointer++] = position
-      else if byte_code == POP_REGISTER:
+      else if byte_code == BC_POP_REGISTER_:
         registers_[byte_codes_[program_counter++]] = stack[--stack_pointer]
-      else if byte_code == BACKTRACK_EQ:
+      else if byte_code == BC_BACKTRACK_EQ_:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
         if reg1 == reg2:
-          registers_[CURRENT_POSITION] = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
           program_counter = stack[--stack_pointer]
-      else if byte_code == BACKTRACK_NE:
+      else if byte_code == BC_BACKTRACK_NE_:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
         if reg1 != reg2:
-          registers_[CURRENT_POSITION] = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
           program_counter = stack[--stack_pointer]
-      else if byte_code == BACKTRACK_GT:
+      else if byte_code == BC_BACKTRACK_GT_:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
         if reg1 > reg2:
-          registers_[CURRENT_POSITION] = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
           program_counter = stack[--stack_pointer]
-      else if byte_code == BACKTRACK_IF_NO_MATCH:
-        if (subject.at --raw registers_[CURRENT_POSITION]) !=
+      else if byte_code == BC_BACKTRACK_IF_NO_MATCH_:
+        if (subject.at --raw registers_[CURRENT_POSITION_]) !=
             (constant_pool_[byte_codes_[program_counter++]]):
-          registers_[CURRENT_POSITION] = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
           program_counter = stack[--stack_pointer]
-      else if byte_code == BACKTRACK_IF_IN_RANGE:
-        code/int := subject.at --raw registers_[CURRENT_POSITION]
+      else if byte_code == BC_BACKTRACK_IF_IN_RANGE_:
+        code/int := subject.at --raw registers_[CURRENT_POSITION_]
         from/int := byte_codes_[program_counter++]
         to/int := byte_codes_[program_counter++]
         if from <= code and code <= to:
-          registers_[CURRENT_POSITION] = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
           program_counter = stack[--stack_pointer]
-      else if byte_code == GOTO_IF_MATCH:
-        code/int := subject.at --raw registers_[CURRENT_POSITION]
+      else if byte_code == BC_GOTO_IF_MATCH_:
+        code/int := subject.at --raw registers_[CURRENT_POSITION_]
         expected/int := byte_codes_[program_counter++]
         dest/int := byte_codes_[program_counter++]
         if code == expected: program_counter = dest
-      else if byte_code == GOTO_IF_IN_RANGE:
-        code/int := subject.at --raw registers_[CURRENT_POSITION]
+      else if byte_code == BC_GOTO_IF_IN_RANGE_:
+        code/int := subject.at --raw registers_[CURRENT_POSITION_]
         from/int := byte_codes_[program_counter++]
         to/int := byte_codes_[program_counter++]
         dest/int := byte_codes_[program_counter++]
         if from <= code and code <= to: program_counter = dest
-      else if byte_code == GOTO_IF_UNICODE_IN_RANGE:
-        code/int := subject[registers_[CURRENT_POSITION]]
+      else if byte_code == BC_GOTO_IF_UNICODE_IN_RANGE_:
+        code/int := subject[registers_[CURRENT_POSITION_]]
         from/int := byte_codes_[program_counter++]
         to/int := byte_codes_[program_counter++]
         dest/int := byte_codes_[program_counter++]
         if from <= code and code <= to: program_counter = dest
-      else if byte_code == GOTO_EQ:
+      else if byte_code == BC_GOTO_EQ_:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
         dest/int := byte_codes_[program_counter++]
         if reg1 == reg2: program_counter = dest
-      else if byte_code == GOTO_GE:
+      else if byte_code == BC_GOTO_GE_:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
         dest/int := byte_codes_[program_counter++]
         if reg1 >= reg2: program_counter = dest
-      else if byte_code == GOTO_IF_WORD_CHARACTER:
+      else if byte_code == BC_GOTO_IF_WORD_CHARACTER_:
         offset/int := byte_codes_[program_counter++]
         char_code/int :=
-            subject.at --raw registers_[CURRENT_POSITION] + offset
+            subject.at --raw registers_[CURRENT_POSITION_] + offset
         dest/int := byte_codes_[program_counter++]
         if char_code >= '0':
           if char_code <= '9':
@@ -2087,20 +2130,20 @@ class MiniExpInterpreter:
             else if (char_code >= 'a' and
                        char_code <= 'z'):
               program_counter = dest
-      else if byte_code == ADD_TO_REGISTER:
+      else if byte_code == BC_ADD_TO_REGISTER_:
         register_index/int := byte_codes_[program_counter++]
         registers_[register_index] += byte_codes_[program_counter++]
-      else if byte_code == ADVANCE_BY_RUNE_WIDTH:
+      else if byte_code == BC_ADVANCE_BY_RUNE_WIDTH_:
         register_index/int := byte_codes_[program_counter++]
         characters/int := byte_codes_[program_counter++]
-        position := registers_[CURRENT_POSITION]
+        position := registers_[CURRENT_POSITION_]
         if characters > 0:
           characters.repeat:
             if position >= subject.size:
               position++
             else:
               code/int := subject.at --raw position
-              position += MiniExpCompiler.UTF_FIRST_CHAR_TABLE_[code >> 4]
+              position += MiniExpCompiler_.UTF_FIRST_CHAR_TABLE_[code >> 4]
         else if characters < 0:
           (-characters).repeat:
             position--
@@ -2110,27 +2153,27 @@ class MiniExpInterpreter:
                 position--
                 code = subject[position]
         registers_[register_index] = position
-      else if byte_code == COPY_REGISTER:
+      else if byte_code == BC_COPY_REGISTER_:
         // We don't normally keep the stack pointer in sync with its slot in
         // the registers_, but we have to have it in sync here.
-        registers_[STACK_POINTER] = stack_pointer
+        registers_[STACK_POINTER_] = stack_pointer
         register_index/int := byte_codes_[program_counter++]
         value/int := registers_[byte_codes_[program_counter++]]
         registers_[register_index] = value
-        stack_pointer = registers_[STACK_POINTER]
-      else if byte_code == BACKTRACK_ON_BACK_REFERENCE:
+        stack_pointer = registers_[STACK_POINTER_]
+      else if byte_code == BC_BACKTRACK_ON_BACK_REFERENCE_:
         register_index/int := byte_codes_[program_counter++]
         case_sensitive := byte_codes_[program_counter++] != 0
         if not check_back_reference subject case_sensitive register_index:
           // Backtrack.
-          registers_[CURRENT_POSITION] = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
           program_counter = stack[--stack_pointer]
-      else if byte_code == BACKTRACK:
-        registers_[CURRENT_POSITION] = stack[--stack_pointer]
+      else if byte_code == BC_BACKTRACK_:
+        registers_[CURRENT_POSITION_] = stack[--stack_pointer]
         program_counter = stack[--stack_pointer]
-      else if byte_code == FAIL:
+      else if byte_code == BC_FAIL_:
         return false
-      else if byte_code == SUCCEED:
+      else if byte_code == BC_SUCCEED_:
         return true
       else:
         assert: false
@@ -2138,9 +2181,9 @@ class MiniExpInterpreter:
   check_back_reference subject/string case_sensitive/bool register_index/int -> bool:
     start/int := registers_[register_index]
     end/int := registers_[register_index + 1]
-    if end == NO_POSITION: return true
+    if end == NO_POSITION_: return true
     length/int := end - start
-    current_position/int := registers_[CURRENT_POSITION]
+    current_position/int := registers_[CURRENT_POSITION_]
     if current_position + end - start > subject.size: return false
     for i := 0; i < length; i++:
       x := subject.at --raw start + i
@@ -2149,7 +2192,7 @@ class MiniExpInterpreter:
         x = case.reg_exp_canonicalize x
         y = case.reg_exp_canonicalize y
       if x != y: return false
-    registers_[CURRENT_POSITION] += length
+    registers_[CURRENT_POSITION_] += length
     return true
 
 class FormatException:
