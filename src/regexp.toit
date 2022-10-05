@@ -1459,6 +1459,52 @@ class MiniExp_ implements RegExp:
     first_capture_register_ = compiler.first_capture_register
     sticky_entry_point_ = sticky_entry_point.location
 
+  disassemble_ -> none:
+    print("\nDisassembly\n")
+    labels /List/*<bool>*/ := List byte_codes_.size
+    for i := 0; i < byte_codes_.size; :
+      code /int := byte_codes_[i]
+      if code == BC_PUSH_BACKTRACK_ or code == BC_GOTO_:
+        pushed /int := byte_codes_[i + 1]
+        if pushed >= 0 and pushed < byte_codes_.size: labels[pushed] = true
+      i += BYTE_CODE_NAMES_[code * 3 + 1] + BYTE_CODE_NAMES_[code * 3 + 2] + 1
+    for i := 0; i < byte_codes_.size; :
+      if labels[i]: print "$i:"
+      i += disassemble_single_instruction_ byte_codes_ first_capture_register_ i: print it
+    print "\nEnd Disassembly\n"
+
+  static disassemble_single_instruction_ byte_codes/List first_capture_register/int? i/int [block] -> int:
+      code /int := byte_codes[i]
+      regs /int := BYTE_CODE_NAMES_[code * 3 + 1]
+      other_args /int := BYTE_CODE_NAMES_[code * 3 + 2]
+      line /string := "$(%3d i):"
+      joiner /string := " "
+      arg_joiner /string := " "
+      if code == BC_COPY_REGISTER_:
+        joiner = " = "
+      else if code == BC_ADD_TO_REGISTER_:
+        arg_joiner = " += "
+      else:
+        line = "$(%3d i): $BYTE_CODE_NAMES_[code * 3]"
+      for j := 0; j < regs; j++:
+        reg/int := byte_codes[i + 1 + j]
+        line = "$line$(j == 0 ? " " : joiner)$(register_name_ reg first_capture_register)"
+      for j := 0; j < other_args; j++:
+        line = "$line$arg_joiner$byte_codes[i + 1 + regs + j]"
+      block.call line
+      return regs + other_args + 1
+
+  static register_name_ i/int first_capture_register/int? -> string:
+    if first_capture_register and first_capture_register <= i:
+      capture := i - first_capture_register
+      if capture & 1 == 0:
+        return "start$(capture / 2)"
+      else:
+        return "end$(capture / 2)"
+    if i < REGISTER_NAMES_.size:
+      return REGISTER_NAMES_[i]
+    return "reg$i"
+
 // Lexer tokens.
 NONE ::= 0
 QUANT ::= 1
@@ -1973,34 +2019,6 @@ class MiniExpParser_:
     else:
       last_was_greedy_ = true
 
-disassemble_ codes/List/*<int>*/ -> none:
-  print("\nDisassembly\n")
-  labels/List/*<bool>*/ := List codes.size
-  for i := 0; i < codes.size; :
-    code/int := codes[i]
-    if code == BC_PUSH_BACKTRACK_ or code == BC_GOTO_:
-      pushed/int := codes[i + 1]
-      if pushed >= 0 and pushed < codes.size: labels[pushed] = true
-    i += BYTE_CODE_NAMES_[code * 3 + 1] + BYTE_CODE_NAMES_[code * 3 + 2] + 1
-  for i := 0; i < codes.size; :
-    if labels[i]: print "$i:"
-    i += disassemble_single_instruction_ codes i null
-  print "\nEnd Disassembly\n"
-
-disassemble_single_instruction_ codes/List/*<int>*/ i/int registers/List?/*<int>*/ -> int:
-    code/int := codes[i]
-    regs/int := BYTE_CODE_NAMES_[code * 3 + 1]
-    other_args/int := BYTE_CODE_NAMES_[code * 3 + 2]
-    line/string := "$i: $BYTE_CODE_NAMES_[code * 3]"
-    for j := 0; j < regs; j++:
-      reg/int := codes[i + 1 + j]
-      line = "$line $REGISTER_NAMES_[reg]"
-      if registers != null: line = "$line:$registers[reg]"
-    for j := 0; j < other_args; j++:
-      line = line + " " + codes[i + 1 + regs + j].to_string
-    print line
-    return regs + other_args + 1
-
 class MiniExpInterpreter_:
   byte_codes_/List/*<int>*/ ::= ?
   constant_pool_ /ByteArray ::= ?
@@ -2015,22 +2033,16 @@ class MiniExpInterpreter_:
   interpret subject/string start_position/int program_counter/int -> bool:
     registers_[STRING_LENGTH_] = subject.size
     registers_[CURRENT_POSITION_] = start_position
+
     while true:
       byte_code := byte_codes_[program_counter]
       if trace_:
-        reg_args := BYTE_CODE_NAMES_[byte_code * 3 + 1]
-        other_args := BYTE_CODE_NAMES_[byte_code * 3 + 2]
-        arg_description := []
-        reg_args.repeat:
-          reg := byte_codes_[program_counter + it + 1]
-          if reg < FIXED_REGISTERS_:
-            arg_description.add REGISTER_NAMES_[reg]
-          else:
-            arg_description.add "r$reg"
-        other_args.repeat: arg_description.add "$(byte_codes_[program_counter + reg_args + it + 1])"
-        print "\"$subject\" $program_counter: $BYTE_CODE_NAMES_[byte_code * 3]($(arg_description.join ", ")) position=$registers_[CURRENT_POSITION_]"
-        print (" " * (registers_[CURRENT_POSITION_] + 1)) + "^"
-        print registers_
+        pos := registers_[CURRENT_POSITION_]
+        i := pos
+        while i < subject.size and subject[i] == null: i--
+        line := "\"$subject[0..i]^$subject[i..]\"  @$(%-3d pos) $(%50s registers_)  "
+        MiniExp_.disassemble_single_instruction_ byte_codes_ null program_counter: line += it
+        print line
       program_counter++
       // TODO: Faster implementation.
       if byte_code == BC_GOTO_:
