@@ -716,7 +716,7 @@ class Quantifier_ extends MiniExpAst_:
   max_ /int? ::= ?
   greedy_ /bool ::= ?
   body_/MiniExpAst_ ::= ?
-  counter_register_/int := -1
+  counter_register_/int? := null
   start_of_match_register_/int? := null  // Implements 21.2.2.5.1 note 4.
   min_register_/int? := null
   max_register_/int? := null
@@ -747,7 +747,7 @@ class Quantifier_ extends MiniExpAst_:
       --max /int?
       --greedy /bool
       --body /MiniExpAst_
-      --counter_register /int
+      --counter_register /int?
       --start_of_match_register /int?
       --min_register /int?
       --max_register /int?
@@ -937,7 +937,7 @@ class Quantifier_ extends MiniExpAst_:
 
   body_can_match_empty_ -> bool: return start_of_match_register_ != null
 
-  save_and_restore_registers_:
+  save_and_restore_registers_ -> bool:
     return subtree_registers_that_need_saving_ != null and
            not subtree_registers_that_need_saving_.is_empty
 

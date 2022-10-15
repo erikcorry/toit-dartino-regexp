@@ -320,12 +320,10 @@ match -> none:
   // Optional () in loop depends on last iteration.
   re = RegExp "(?:(foo)?(bar)?/)*"
   m = re.first_matching "foobar/foobar/foo/"
-  // TODO: Why not?
-  // expect_equals "foobar/foobar/foo/" m[0]
+  expect_equals "foobar/foobar/foo/" m[0]
   expect_equals "foo" m[1]
   expect_equals null m[2]
   m = re.first_matching "foobar/foo/foobar/"
-  // TODO: Why not?
-  // expect_equals "foobar/foo/foobar/" m[0]
+  expect_equals "foobar/foo/foobar/" m[0]
   expect_equals "foo" m[1]
   expect_equals "bar" m[2]
