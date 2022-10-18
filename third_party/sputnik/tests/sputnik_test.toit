@@ -171,8 +171,8 @@ main:
   expected = ["abc123"]
   check m expected
   // S15.10.2.7_A4_T2.js
-  re = RegExp "[^\"]*" --case_sensitive=true --multiline=false
-  m = re.first_matching "alice said: \"don't\""
+  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
+  m = re.first_matching """alice said: "don't""""
   expected = ["alice said: "]
   check m expected
   // S15.10.2.7_A1_T1.js
@@ -363,9 +363,9 @@ main:
   expected = ["abc"]
   check m expected
   // S15.10.2.7_A4_T9.js
-  re = RegExp "[\"'][^\"']*[\"']" --case_sensitive=true --multiline=false
-  m = re.first_matching "alice cries out:\"\""
-  expected = ["\"\""]
+  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
+  m = re.first_matching """alice cries out:"""""
+  expected = [""""""""]
   check m expected
   // S15.10.2.7_A5_T6.js
   re = RegExp "o?pqrst" --case_sensitive=true --multiline=false
@@ -595,8 +595,8 @@ main:
   expected = ["cour"]
   check m expected
   // S15.10.2.7_A4_T4.js
-  re = RegExp "[^\"]*" --case_sensitive=true --multiline=false
-  m = re.first_matching "alice \"sweep\": \"don't\""
+  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
+  m = re.first_matching """alice "sweep": "don't""""
   expected = ["alice "]
   check m expected
   // S15.10.2.9_A1_T3.js
@@ -651,8 +651,8 @@ main:
   re = RegExp "(A)?(A.*)" --case_sensitive=true --multiline=false
   // Rejected input (__string);
   // S15.10.2.7_A4_T5.js
-  re = RegExp "[^\"]*" --case_sensitive=true --multiline=false
-  m = re.first_matching "alice \"sweep\": \"don't\""
+  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
+  m = re.first_matching """alice "sweep": "don't""""
   expected = ["alice "]
   check m expected
   // S15.10.2.5_A1_T2.js
@@ -672,7 +672,7 @@ main:
   // S15.10.2.8_A3_T16.js
   // Rejected 2: var __executed = __re.exec(__strOriginal);
   // S15.10.2.7_A4_T7.js
-  re = RegExp "[\"'][^\"']*[\"']" --case_sensitive=true --multiline=false
+  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
   m = re.first_matching "alice cries out: 'don't'"
   expected = ["'don'"]
   check m expected
@@ -720,7 +720,7 @@ main:
   expected = ["JavaScr", "Scr"]
   check m expected
   // S15.10.2.7_A4_T8.js
-  re = RegExp "[\"'][^\"']*[\"']" --case_sensitive=true --multiline=false
+  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
   m = re.first_matching "alice cries out: don't"
   expect_equals null m
   // S15.10.2.6_A1_T5.js
@@ -768,8 +768,8 @@ main:
   expected = ["%&*@"]
   check m expected
   // S15.10.2.7_A4_T1.js
-  re = RegExp "[^\"]*" --case_sensitive=true --multiline=false
-  m = re.first_matching "\"beast\"-nickname"
+  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
+  m = re.first_matching """"beast"-nickname"""
   expected = [""]
   check m expected
   // S15.10.2.8_A1_T5.js
@@ -865,9 +865,9 @@ main:
   expected = ["bbbbbbb", "bbbbbbb", ""]
   check m expected
   // S15.10.2.7_A4_T6.js
-  re = RegExp "[\"'][^\"']*[\"']" --case_sensitive=true --multiline=false
-  m = re.first_matching "alice \"sweep\": \"don't\""
-  expected = ["\"sweep\""]
+  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
+  m = re.first_matching """alice "sweep": "don't""""
+  expected = [""""sweep""""]
   check m expected
   // S15.10.2.7_A3_T3.js
   re = RegExp "\\s+java\\s+" --case_sensitive=true --multiline=false
@@ -1008,7 +1008,7 @@ main:
   m = re.first_matching "using of Java language"
   expect_equals null m
   // S15.10.2.7_A4_T3.js
-  re = RegExp "[^\"]*" --case_sensitive=true --multiline=false
+  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
   m = re.first_matching "before'i'start"
   expected = ["before'i'start"]
   check m expected

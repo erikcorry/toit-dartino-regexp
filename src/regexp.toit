@@ -519,8 +519,7 @@ abstract class MiniExpAst_:
   // Label is bound at the entry point for the AST tree.
   label ::= MiniExpLabel_
 
-  case_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
-    return this
+  abstract case_expand compiler/MiniExpCompiler_ -> MiniExpAst_
 
 class Disjunction_ extends MiniExpAst_:
   left_/MiniExpAst_ ::= ?
@@ -553,6 +552,9 @@ class EmptyAlternative_ extends MiniExpAst_:
   analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
     return MiniExpAnalysis_.empty
 
+  case_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
+    return this
+
 class Alternative_ extends MiniExpAst_:
   left_/MiniExpAst_ ::= ?
   right_/MiniExpAst_ ::= ?
@@ -577,6 +579,9 @@ class Alternative_ extends MiniExpAst_:
 abstract class Assertion extends MiniExpAst_:
   analyze compiler/MiniExpCompiler_ -> MiniExpAnalysis_:
     return MiniExpAnalysis_.empty
+
+  case_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
+    return this
 
 class AtStart_ extends Assertion:
   generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
@@ -810,12 +815,16 @@ class Quantifier_ extends MiniExpAst_:
     new_iteration := MiniExpLabel_
     cant_advance_more := MiniExpLabel_
     continuation_failed := MiniExpLabel_
+    after_cant_advance_more := MiniExpLabel_
 
     // Save the current position, so we know when the quantifier has been
     // unwound enough.
     compiler.copy_register optimized_greedy_register_ CURRENT_POSITION_
     if min_ != 0:
       assert: min_ < 3 and body_length_ < 3
+      // Move the unwound-enough register forward by enough characters to cover
+      // the minimum repetitions.  This doesn't actually check the characters.
+      // It can advance beyond the end of the subject!
       compiler.advance_by_rune_width optimized_greedy_register_ (min_ * body_length_)
 
     // This backtrack doesn't trigger until the quantifier has eaten as much as
@@ -826,7 +835,7 @@ class Quantifier_ extends MiniExpAst_:
     // special mode where we use a different backtrack instruction that just
     // rewinds the current position a certain number of characters instead of
     // popping it.
-    compiler.push_backtrack cant_advance_more
+    compiler.push_backtrack cant_advance_more  // Also pushes the current position, which we don't need.
 
     // The loop.
     compiler.bind new_iteration
@@ -835,13 +844,15 @@ class Quantifier_ extends MiniExpAst_:
 
     // The greedy quantifier has eaten as much as it can.  Time to try the
     // continuation of the regexp after the quantifier.
-    compiler.bind cant_advance_more
+    compiler.bind cant_advance_more  // Also restores the original position, which is wrong.
+    compiler.copy_register CURRENT_POSITION_ save_position_register_  // Fix the position.
 
     if min_ != 0:
-      compiler.backtrack_if_greater optimized_greedy_register_ save_position_register_
+      // We may have to backtrack because we didn't get the minimum number of
+      // matches.
+      compiler.backtrack_if_greater optimized_greedy_register_ CURRENT_POSITION_
 
-    compiler.add_to_register save_position_register_ body_length_
-    compiler.copy_register CURRENT_POSITION_ save_position_register_
+    compiler.goto after_cant_advance_more
 
     // The continuation of the regexp failed.  We backtrack the greedy
     // quantifier by one step and retry.
@@ -851,6 +862,7 @@ class Quantifier_ extends MiniExpAst_:
     // to the continuation (we haven't pushed a backtrack, so if that fails, it
     // will backtrack further).
     // We don't have goto_if_equal, so use goto_if_greater_equal.
+    compiler.bind after_cant_advance_more
     compiler.goto_if_greater_equal optimized_greedy_register_ CURRENT_POSITION_ on_success
     compiler.push_backtrack continuation_failed
     compiler.goto on_success
@@ -989,7 +1001,8 @@ class Atom_ extends MiniExpAst_:
     return result
 
   utf_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
-    byte_count := MiniExpCompiler_.UTF_FIRST_CHAR_TABLE_[(compiler.constant_pool_byte constant_index_) >> 4]
+    first_byte := compiler.constant_pool_byte constant_index_
+    byte_count := MiniExpCompiler_.UTF_FIRST_CHAR_TABLE_[first_byte >> 4]
     if byte_count == 1: return this
     result := Alternative_
         Atom_ constant_index_
@@ -1228,6 +1241,9 @@ class BackReference_ extends MiniExpAst_:
     compiler.add_back_reference this
     return MiniExpAnalysis_.know_nothing
 
+  case_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
+    return this
+
 class Capture_ extends MiniExpAst_:
   capture_count_ /int ::= ?
   body_/MiniExpAst_ ::= ?
@@ -1235,6 +1251,8 @@ class Capture_ extends MiniExpAst_:
   end_register_/int? := null
 
   constructor .capture_count_ .body_:
+
+  constructor.private_ .capture_count_ .body_ .start_register_ .end_register_:
 
   allocate_registers compiler/MiniExpCompiler_ -> none:
     if start_register_ == null:
@@ -1267,6 +1285,11 @@ class Capture_ extends MiniExpAst_:
     allocate_registers compiler
     body_analysis := body_.analyze compiler
     return MiniExpAnalysis_.capture body_analysis start_register_ end_register_
+
+  case_expand compiler/MiniExpCompiler_ -> MiniExpAst_:
+    b := body_.case_expand compiler
+    if b == body_: return this
+    return Capture_.private_ capture_count_ b start_register_ end_register_
 
 interface Match:
   /// The regular expression that created this match.
@@ -1444,7 +1467,7 @@ class MiniExp_ implements RegExp:
     if not top_analysis.anchored:
       end := MiniExpLabel_
       compiler.goto_if_greater_equal CURRENT_POSITION_ STRING_LENGTH_ end
-      compiler.add_to_register CURRENT_POSITION_ 1
+      compiler.advance_by_rune_width CURRENT_POSITION_ 1
       compiler.goto start
       compiler.bind end
     compiler.bind fail_sticky
