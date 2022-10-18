@@ -24,10 +24,11 @@ main:
 
   out = file.Stream.for_write "../../sputnik/tests/sputnik_test.toit"
   out_unicode := file.Stream.for_write "../../sputnik/tests/sputnik_test_unicode.toit"
-  [out, out_unicode].do:
-    condense_tests_to_one_file it --unicode=(it == out_unicode)
+  out_deseret := file.Stream.for_write "../../sputnik/tests/sputnik_test_deseret.toit"
+  [out, out_unicode, out_deseret].do:
+    condense_tests_to_one_file it --unicode=(it != out) --deseret=(it == out_deseret)
 
-condense_tests_to_one_file out --unicode/bool -> none:
+condense_tests_to_one_file out --unicode/bool --deseret/bool -> none:
   out.write """
       $SPUTNIK_COPYRIGHT
       $SPUTNIK_COVERAGE
@@ -67,11 +68,11 @@ condense_tests_to_one_file out --unicode/bool -> none:
         while line := reader.read_line:
           index := line.index_of "__executed = "
           if index >= 0:
-            emitted_regexp = handle_executed_line out entry line index --unicode=unicode
+            emitted_regexp = handle_executed_line out entry line index --unicode=unicode --deseret=deseret
           index = line.index_of "__expected = "
           if index >= 0:
             if emitted_regexp:
-              handle_expected_line out entry line index --unicode=unicode
+              handle_expected_line out entry line index --unicode=unicode --deseret=deseret
           if emitted_regexp and line.starts_with "assert(!__executed":
             out.write "  expect_equals null m\n"
         finally:
@@ -81,7 +82,7 @@ is_alpha char/int -> bool:
   return 'a' <= char <= 'z'
       or 'A' <= char <= 'Z'
 
-handle_executed_line out filename/string line/string index/int --unicode/bool -> bool:
+handle_executed_line out filename/string line/string index/int --unicode/bool --deseret/bool -> bool:
   if line[index + 13] != '/':
     out.write "\n"
     out.write "  // $filename\n"
@@ -128,7 +129,7 @@ handle_executed_line out filename/string line/string index/int --unicode/bool ->
   else:
     throw "Could not parse $line $line[method_index..]"
   re_text := line[index + 14..index + 14 + close]
-  escaped := convert_from_js_regexp_to_toit_escape re_text --unicode_munge=unicode
+  escaped := convert_from_js_regexp_to_toit_escape re_text --unicode_munge=unicode --deseret_munge=deseret
   out.write "\n"
   out.write "  // $filename\n"
   out.write "  re = RegExp \"$escaped\" --case_sensitive=$(not case_independent) --multiline=$multi_line\n"
@@ -139,31 +140,31 @@ handle_executed_line out filename/string line/string index/int --unicode/bool ->
   end_quote := line[method_index + 6..].index_of --last "$(%c input_quote)"
   if end_quote == -1: throw "Where is the end: $line"
   input := line[method_index + 6..method_index + 6 + end_quote]
-  input = convert_from_js_string_to_toit_escape input --unicode_munge=unicode
+  input = convert_from_js_string_to_toit_escape input --unicode_munge=unicode --deseret_munge=deseret
   out.write "  m = re.first_matching \"$input\"\n"
   return true
 
-handle_expected_line out filename/string line/string index/int --unicode/bool -> none:
+handle_expected_line out filename/string line/string index/int --unicode/bool --deseret/bool -> none:
   if line[index + 13] != '[':
     out.write "  // Rejected test: '$line'\n"
     return
   end_index := line.index_of --last "]"
   array_contents := line[index + 14..end_index]
-  expected := escape_js_array array_contents --unicode_munge=unicode
+  expected := escape_js_array array_contents --unicode_munge=unicode --deseret_munge=deseret
   if expected:
     out.write "  expected = $expected\n"
     out.write "  check m expected\n"
   else:
     out.write "  // Rejected for containing non-literal expectation $line\n"
 
-convert_from_js_regexp_to_toit_escape str/string --unicode_munge/bool=false -> string:
+convert_from_js_regexp_to_toit_escape str/string --unicode_munge/bool=false --deseret_munge=false -> string:
   str = parse_js_regexp str
-  str = toit_escape str --unicode_munge=unicode_munge
+  str = toit_escape str --unicode_munge=unicode_munge --deseret_munge=deseret_munge
   return str
 
-convert_from_js_string_to_toit_escape str/string --unicode_munge/bool=false -> string:
+convert_from_js_string_to_toit_escape str/string --unicode_munge/bool=false --deseret_munge=false -> string:
   str = parse_js_string str
-  str = toit_escape str --unicode_munge=unicode_munge
+  str = toit_escape str --unicode_munge=unicode_munge --deseret_munge=deseret_munge
   return str
 
 MUST_ESCAPE_TOIT ::= ByteArray 128:
@@ -201,27 +202,49 @@ MUNGE_MAP ::= {
     'U': "Ü",
 }
 
+MUNGE_MAP_DESERET ::= {
+    'a': "𐐰",
+    'b': "𐐺",
+    'c': "𐑅",
+    'e': "é",
+    'g': "𐑀",
+    'i': "𐐮",
+    'l': "𐑊",
+    'o': "𐐲",
+    'u': "𐐭",
+    'A': "𐐈",
+    'B': "𐐒",
+    'C': "𐐝",
+    'E': "É",
+    'G': "𐐘",
+    'I': "𐐆",
+    'L': "𐐢",
+    'O': "𐐊",
+    'U': "𐐅",
+}
+
 /// Escapes a string so that it can be used in Toit source code.
-toit_escape str/string --unicode_munge/bool=false -> string:
+toit_escape str/string --unicode_munge/bool=false --deseret_munge/bool=false -> string:
+  MAP ::= deseret_munge ? MUNGE_MAP_DESERET : MUNGE_MAP
   double_quote_found := false
   str.do:
     if it == '"' and (str.index_of "\"\"\"") == -1:
       double_quote_found = true
       continue.do
-    if (unicode_munge and MUNGE_MAP.contains it) or (must_escape_toit it) != 1:
+    if (unicode_munge and MAP.contains it) or (must_escape_toit it) != 1:
       out_bytes := 0
       str.do:
-        if unicode_munge and MUNGE_MAP.contains it:
-          out_bytes += MUNGE_MAP[it].size
+        if unicode_munge and MAP.contains it:
+          out_bytes += MAP[it].size
         else:
           out_bytes += must_escape_toit it
       ba := ByteArray out_bytes
       i := 0
       str.do: | char/int? |
         bytes := ?
-        if unicode_munge and MUNGE_MAP.contains char:
-          bytes = MUNGE_MAP[char].size
-          replacement := MUNGE_MAP[char]
+        if unicode_munge and MAP.contains char:
+          bytes = MAP[char].size
+          replacement := MAP[char]
           ba.replace i replacement
           i += replacement.size
           continue.do
@@ -344,7 +367,7 @@ parse_js_string str -> string:
       l.add char
   return string.from_runes l
 
-escape_js_array input/string --unicode_munge/bool=false -> List?:
+escape_js_array input/string --unicode_munge/bool=false --deseret_munge/bool=false -> List?:
   result := []
   for i := 0; i < input.size; i++:
     if input[i] == ' ': continue
@@ -363,7 +386,11 @@ escape_js_array input/string --unicode_munge/bool=false -> List?:
         i++
       end := i
       i++
-      result.add "\"$(convert_from_js_string_to_toit_escape --unicode_munge=unicode_munge input[start..end])\""
+      converted := convert_from_js_string_to_toit_escape
+          input[start..end]
+          --unicode_munge=unicode_munge
+          --deseret_munge=deseret_munge
+      result.add "\"$converted\""
     else:
       throw "Lost in $input at $i $(%c input[i])"
     while i < input.size and input[i] == ' ': i++

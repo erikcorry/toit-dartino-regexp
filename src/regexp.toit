@@ -149,6 +149,7 @@ CHAR_CODE_NARROW_NO_BREAK_SPACE_ ::= 0x202f
 CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_ ::= 0x205f
 CHAR_CODE_IDEOGRAPHIC_SPACE_ ::= 0x3000
 CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_ ::= 0xfeff
+CHAR_CODE_LAST_ ::= 0x10ffff
 
 class MiniExpCompiler_:
   pattern /string ::= ?
@@ -609,7 +610,7 @@ abstract class MultiLineAssertion_ extends Assertion:
         '\r' - 1
     compiler.backtrack_if_in_range
         CHAR_CODE_PARAGRAPH_SEPARATOR_ + 1
-        0xffff
+        CHAR_CODE_LAST_
 
 class AtBeginningOfLine_ extends MultiLineAssertion_:
   generate compiler/MiniExpCompiler_ on_success/MiniExpLabel_ -> none:
@@ -1054,7 +1055,7 @@ class CharClass_ extends MiniExpAst_:
     CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_, CHAR_CODE_MEDIUM_MATHEMATICAL_SPACE_,
     CHAR_CODE_IDEOGRAPHIC_SPACE_, CHAR_CODE_IDEOGRAPHIC_SPACE_,
     CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_, CHAR_CODE_ZERO_WIDTH_NO_BREAK_SPACE_,
-    0x10000]
+    CHAR_CODE_LAST_]
 
   add_spaces -> none:
     for i := 1; i < space_codes_.size - 1; i += 2:
@@ -1072,7 +1073,7 @@ class CharClass_ extends MiniExpAst_:
       add 0
           '0' - 1
       add '9' + 1
-          0xffff
+          CHAR_CODE_LAST_
     else if char_code == 's':
       add_spaces
     else if char_code == 'S':
@@ -1092,7 +1093,7 @@ class CharClass_ extends MiniExpAst_:
       add '_' + 1
           'a' - 1
       add 'z' + 1
-          0xffff
+          CHAR_CODE_LAST_
 
   fix_ranges ranges/List/*<Range_>*/ case_sensitive/bool -> List/*<Range_>*/:
     // There's a lot of punctuation and no case-sensitive characters before the
