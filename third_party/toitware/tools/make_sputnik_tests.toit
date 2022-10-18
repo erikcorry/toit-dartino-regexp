@@ -83,8 +83,9 @@ is_alpha char/int -> bool:
 
 handle_executed_line out filename/string line/string index/int --unicode/bool -> bool:
   if line[index + 13] != '/':
+    out.write "\n"
     out.write "  // $filename\n"
-    out.write "  // Rejected 2: $line\n"
+    out.write "  // Rejected for not using literal regexp: $line\n"
     return false
   problem_for_unicode := false
   for dash_index := -2; dash_index != -1 and dash_index < line.size - 1; dash_index = line.index_of "-" (dash_index < 0 ? 0 : dash_index + 1):
@@ -97,7 +98,9 @@ handle_executed_line out filename/string line/string index/int --unicode/bool ->
     problem_for_unicode = true
 
   if unicode and problem_for_unicode:
-    out.write "  // Rejected for unicode: $line\n"
+    out.write "\n"
+    out.write "  // $filename\n"
+    out.write "  // Rejected for being ASCII-specific: $line\n"
     return false
 
   case_independent := false
@@ -110,8 +113,9 @@ handle_executed_line out filename/string line/string index/int --unicode/bool ->
     close = line[index + 14..].index_of "/m."
     if close != -1: multi_line = true
   if close == -1:
+    out.write "\n"
     out.write "  // $filename\n"
-    out.write "  // Rejected 3: $line\n"
+    out.write "  // Rejected for using /g flag: $line\n"
     return false
   method_index := (line[index + 14 + close..].index_of ".")
   if method_index == -1: throw "Could not parse $line"
@@ -125,6 +129,7 @@ handle_executed_line out filename/string line/string index/int --unicode/bool ->
     throw "Could not parse $line $line[method_index..]"
   re_text := line[index + 14..index + 14 + close]
   escaped := convert_from_js_regexp_to_toit_escape re_text --unicode_munge=unicode
+  out.write "\n"
   out.write "  // $filename\n"
   out.write "  re = RegExp \"$escaped\" --case_sensitive=$(not case_independent) --multiline=$multi_line\n"
   input_quote := line[method_index + 5]
@@ -140,7 +145,6 @@ handle_executed_line out filename/string line/string index/int --unicode/bool ->
 
 handle_expected_line out filename/string line/string index/int --unicode/bool -> none:
   if line[index + 13] != '[':
-    out.write "  // $filename\n"
     out.write "  // Rejected test: '$line'\n"
     return
   end_index := line.index_of --last "]"
@@ -150,7 +154,7 @@ handle_expected_line out filename/string line/string index/int --unicode/bool ->
     out.write "  expected = $expected\n"
     out.write "  check m expected\n"
   else:
-    out.write "  // Rejected $line\n"
+    out.write "  // Rejected for containing non-literal expectation $line\n"
 
 convert_from_js_regexp_to_toit_escape str/string --unicode_munge/bool=false -> string:
   str = parse_js_regexp str
