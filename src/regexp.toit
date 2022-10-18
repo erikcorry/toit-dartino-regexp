@@ -246,7 +246,7 @@ class MiniExpCompiler_:
     process_back_refences
 
   process_back_refences -> none:
-    back_references_.do: | b |
+    back_references_.do: | b/BackReference_ |
       // 1-based index (you can't refer back to capture zero).
       numeric_index := int.parse b.index
       if b.index[0] == '0' or numeric_index * 2 >= capture_register_count:
@@ -258,7 +258,7 @@ class MiniExpCompiler_:
         non_octals_found := false
         // The first 0-3 octal digits form an octal character escape, the rest
         // are literals.
-        b.index.code_units.do: | octal_digit |
+        b.index.do --runes: | octal_digit |
           if (not non_octals_found) and
               '0' <= octal_digit <= '7' and
               code_unit * 8 < 0x100 and octals_found < 3:
@@ -1211,7 +1211,7 @@ class BackReference_ extends MiniExpAst_:
 
   index -> string: return back_reference_index_
 
-  set register r/int -> none:
+  register= r/int -> none:
     register_ = r
 
   replace_with_ast ast/MiniExpAst_ -> none:
@@ -1302,10 +1302,15 @@ interface Match:
   */
   operator [] index/int -> string
 
+  /**
+  The number of captures in the regexp.
+  */
+  capture_count -> int
+
 class MiniExpMatch_ implements Match:
-  pattern/RegExp ::= ?
+  pattern /RegExp ::= ?
   input /string ::= ?
-  registers_/List/*<int>*/ ::= ?
+  registers_ /List/*<int>*/ ::= ?
   first_capture_reg_ /int ::= ?
 
   constructor .pattern .input .registers_ .first_capture_reg_:
