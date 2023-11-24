@@ -808,7 +808,7 @@ class Quantifier_ extends MiniExpAst_:
       if counter_check_:
         compiler.add_to_register counter_register_ -1
       if save_and_restore_registers_:
-        for i := subtree_registers_that_need_saving_.size - 1; i >= 0; --i:
+        for i := subtree_registers_that_need_saving_.size - 1; i >= 0; i--:
           compiler.pop subtree_registers_that_need_saving_[i]
       if not greedy_: compiler.backtrack
 
@@ -1489,7 +1489,7 @@ class MiniExp_ implements RegExp:
     sticky_entry_point_ = sticky_entry_point.location
 
   disassemble_ -> none:
-    print("\nDisassembly\n")
+    print "\nDisassembly\n"
     labels /List/*<bool>*/ := List byte_codes_.size
     for i := 0; i < byte_codes_.size; :
       code /int := byte_codes_[i]
@@ -1777,7 +1777,7 @@ class MiniExpParser_:
       // a character class.
       if has_ position_ + 2 and is_backslash_c_character (at_ position_ + 2):
         position_ += 3
-        return at_(position_ - 1) % 32
+        return at_ (position_ - 1) % 32
       // This makes little sense, but for web compatibility, \c followed by an
       // invalid character is interpreted as a literal backslash, followed by
       // the "c", etc.
@@ -1905,7 +1905,7 @@ class MiniExpParser_:
     return 'a' <= code <= 'z'
 
   lex_backslash -> none:
-    if not has_(position_ + 1): error "\\ at end of pattern"
+    if not has_ (position_ + 1): error "\\ at end of pattern"
     next_code/int := at_ position_ + 1
     if ESCAPES.contains next_code:
       position_ += 2
@@ -1932,7 +1932,7 @@ class MiniExpParser_:
     else if next_code == 'x' or next_code == 'u':
       position_ += 2
       last_token_ = OTHER
-      code_unit := lex_hex(next_code == 'x' ? 2 : 4)
+      code_unit := lex_hex (next_code == 'x' ? 2 : 4)
       if code_unit == -1:
         last_token_index_ = position_ - 1
       else:
@@ -2005,7 +2005,7 @@ class MiniExpParser_:
     if quantifier_code == '{':
       parsed_repeats := false
       saved_position := position_
-      if on_digit(position_ + 1):
+      if on_digit (position_ + 1):
         position_++
         // We parse the repeats in the lexer.  Forms allowed are {n}, {n,}
         // and {n,m}.
@@ -2057,7 +2057,7 @@ class MiniExpInterpreter_:
   constructor .byte_codes_ .constant_pool_ .registers_ .trace_:
 
   stack/List/*<int>*/ := []
-  stack_pointer/int := 0
+  stack_pointer/int := -1
 
   interpret subject/string start_position/int program_counter/int -> bool:
     registers_[STRING_LENGTH_] = subject.size
@@ -2078,56 +2078,56 @@ class MiniExpInterpreter_:
         program_counter = byte_codes_[program_counter]
       else if byte_code == BC_PUSH_REGISTER_:
         reg/int := registers_[byte_codes_[program_counter++]]
+        stack_pointer++
         if stack_pointer == stack.size:
           stack.add reg
-          stack_pointer++
         else:
-          stack[stack_pointer++] = reg
+          stack[stack_pointer] = reg
       else if byte_code == BC_PUSH_BACKTRACK_:
         value/int := byte_codes_[program_counter++]
+        stack_pointer++
         if stack_pointer == stack.size:
           stack.add value
-          stack_pointer++
         else:
-          stack[stack_pointer++] = value
+          stack[stack_pointer] = value
         position/int := registers_[CURRENT_POSITION_]
+        stack_pointer++
         if stack_pointer == stack.size:
           stack.add position
-          stack_pointer++
         else:
-          stack[stack_pointer++] = position
+          stack[stack_pointer] = position
       else if byte_code == BC_POP_REGISTER_:
-        registers_[byte_codes_[program_counter++]] = stack[--stack_pointer]
+        registers_[byte_codes_[program_counter++]] = stack[stack_pointer--]
       else if byte_code == BC_BACKTRACK_EQ_:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
         if reg1 == reg2:
-          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
-          program_counter = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[stack_pointer--]
+          program_counter = stack[stack_pointer--]
       else if byte_code == BC_BACKTRACK_NE_:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
         if reg1 != reg2:
-          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
-          program_counter = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[stack_pointer--]
+          program_counter = stack[stack_pointer--]
       else if byte_code == BC_BACKTRACK_GT_:
         reg1/int := registers_[byte_codes_[program_counter++]]
         reg2/int := registers_[byte_codes_[program_counter++]]
         if reg1 > reg2:
-          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
-          program_counter = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[stack_pointer--]
+          program_counter = stack[stack_pointer--]
       else if byte_code == BC_BACKTRACK_IF_NO_MATCH_:
         if (subject.at --raw registers_[CURRENT_POSITION_]) !=
             (constant_pool_[byte_codes_[program_counter++]]):
-          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
-          program_counter = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[stack_pointer--]
+          program_counter = stack[stack_pointer--]
       else if byte_code == BC_BACKTRACK_IF_IN_RANGE_:
         code/int := subject.at --raw registers_[CURRENT_POSITION_]
         from/int := byte_codes_[program_counter++]
         to/int := byte_codes_[program_counter++]
         if from <= code and code <= to:
-          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
-          program_counter = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[stack_pointer--]
+          program_counter = stack[stack_pointer--]
       else if byte_code == BC_GOTO_IF_MATCH_:
         code/int := subject.at --raw registers_[CURRENT_POSITION_]
         expected/int := byte_codes_[program_counter++]
@@ -2207,11 +2207,11 @@ class MiniExpInterpreter_:
         case_sensitive := byte_codes_[program_counter++] != 0
         if not check_back_reference subject case_sensitive register_index:
           // Backtrack.
-          registers_[CURRENT_POSITION_] = stack[--stack_pointer]
-          program_counter = stack[--stack_pointer]
+          registers_[CURRENT_POSITION_] = stack[stack_pointer--]
+          program_counter = stack[stack_pointer--]
       else if byte_code == BC_BACKTRACK_:
-        registers_[CURRENT_POSITION_] = stack[--stack_pointer]
-        program_counter = stack[--stack_pointer]
+        registers_[CURRENT_POSITION_] = stack[stack_pointer--]
+        program_counter = stack[stack_pointer--]
       else if byte_code == BC_FAIL_:
         return false
       else if byte_code == BC_SUCCEED_:
