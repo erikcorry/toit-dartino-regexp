@@ -3,7 +3,6 @@
 This is a work-in-progress port of the Dartino regexps (JavaScript
 compatible) to Toit.
 
-Currently it doesn't even compile.
+It is reasonably compatible with ES5 regexps, but very slow.
 
-Who knows if it will ever be finished, or if this is even the
-correct approach.
+At this point is has not yet been released on pkg.toit.io.
