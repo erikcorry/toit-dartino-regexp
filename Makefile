@@ -8,6 +8,7 @@ all: test
 .PHONY: install-pkgs
 install-pkgs: rebuild-cmake
 	(cd build && ninja install-pkgs)
+	(cd build && ninja install-pkgs-sputnik)
 
 .PHONY: test
 test: install-pkgs rebuild-cmake

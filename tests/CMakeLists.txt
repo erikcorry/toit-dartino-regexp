@@ -16,6 +16,12 @@ add_custom_target(
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+add_custom_target(
+  "install-pkgs-sputnik"
+  COMMAND "${TOITPKG}" install
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/sputnik/tests
+)
+
 include(ProcessorCount)
 ProcessorCount(NUM_CPU)
 
