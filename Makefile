@@ -7,12 +7,12 @@ all: test
 
 .PHONY: install-pkgs
 install-pkgs: rebuild-cmake
-	(cd build && ninja install-pkgs)
-	(cd build && ninja install-pkgs-sputnik)
+	cmake --build build --target install-pkgs
+	cmake --build build --target install-pkgs-sputnik
 
 .PHONY: test
 test: install-pkgs rebuild-cmake
-	(cd build && ninja check)
+	cmake --build build --target check
 
 # We rebuild the cmake file all the time.
 # We use "glob" in the cmakefile, and wouldn't otherwise notice if a new
@@ -21,4 +21,4 @@ test: install-pkgs rebuild-cmake
 .PHONY: rebuild-cmake
 rebuild-cmake:
 	mkdir -p build
-	(cd build && cmake .. -G Ninja)
+	cmake -B build -DCMAKE_BUILD_TYPE=Release
