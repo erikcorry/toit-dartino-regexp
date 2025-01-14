@@ -7,32 +7,32 @@ import case
 main:
   name := "Donald Duck"
 
-  up := case.to_upper name
-  down := case.to_lower name
+  up := case.to-upper name
+  down := case.to-lower name
 
   print up    // DONALD DUCK
   print down  // donald duck
 
   name2 := "Øjvind Ørn"
 
-  up = case.to_upper name2
-  down = case.to_lower name2
+  up = case.to-upper name2
+  down = case.to-lower name2
 
   print up    // ØJVIND ØRN
   print down  // øjvind ørn
 
   name3 := "Ντόναλντ Ντακ"
 
-  up = case.to_upper name3
-  down = case.to_lower name3
+  up = case.to-upper name3
+  down = case.to-lower name3
 
   print up    // ΝΤΌΝΑΛΝΤ ΝΤΑΚ
   print down  // ντόναλντ ντακ
 
   name4 := "Straßenbahnführer"
 
-  up = case.to_upper name4
-  down = case.to_lower name4
+  up = case.to-upper name4
+  down = case.to-lower name4
 
   print up    // STRASSENBAHNFÜHRER
   print down  // straßenbahnführer

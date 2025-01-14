@@ -8,13 +8,13 @@ import regexp show RegExp
 import regexp
 
 check match expected:
-  expect_equals match.capture_count (expected.size - 1)
+  expect-equals match.capture-count (expected.size - 1)
   actual := []
-  (match.capture_count + 1).repeat:
+  (match.capture-count + 1).repeat:
     actual.add match[it]
   if actual != expected:
     print "Expected\n$expected, got\n$actual"
-  expect_equals expected actual
+  expect-equals expected actual
 
 main:
   re := null
@@ -22,14 +22,14 @@ main:
   expected := null
 
   // S15.10.2.3_A1_T10.js
-  re = RegExp "(?:åb|çd)+|éf" --case_sensitive=false --multiline=false
-  m = re.first_matching "ÅÉKéFÇDåb"
+  re = RegExp "(?:åb|çd)+|éf" --case-sensitive=false --multiline=false
+  m = re.first-matching "ÅÉKéFÇDåb"
   expected = ["éF"]
   check m expected
 
   // S15.10.2.13_A2_T8.js
-  re = RegExp "[^]" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç#\$%déf%&*@ġhï"
+  re = RegExp "[^]" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç#\$%déf%&*@ġhï"
   expected = ["å"]
   check m expected
 
@@ -43,19 +43,19 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\d{3}|[a-z]{4}/.test("2, 12 and 23 AND 0.00.1");
 
   // S15.10.2.7_A4_T14.js
-  re = RegExp "(\\d*)(\\d+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "1234567890"
+  re = RegExp "(\\d*)(\\d+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "1234567890"
   expected = ["1234567890", "123456789", "0"]
   check m expected
 
   // S15.10.2.7_A5_T3.js
-  re = RegExp "jåvå(sçrïpt)?" --case_sensitive=true --multiline=false
-  m = re.first_matching "ståté: bøth Jåvå ånd JåvåSçrïpt üséd ïn wéb dévéłøpmént"
-  expect_equals null m
+  re = RegExp "jåvå(sçrïpt)?" --case-sensitive=true --multiline=false
+  m = re.first-matching "ståté: bøth Jåvå ånd JåvåSçrïpt üséd ïn wéb dévéłøpmént"
+  expect-equals null m
 
   // S15.10.2.9_A1_T5.js
-  re = RegExp "(å*)b\\1+" --case_sensitive=true --multiline=false
-  m = re.first_matching "båååç"
+  re = RegExp "(å*)b\\1+" --case-sensitive=true --multiline=false
+  m = re.first-matching "båååç"
   expected = ["b", ""]
   check m expected
 
@@ -66,45 +66,45 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\w{3}\d?/.exec("CE\uFFFFL\uFFDDbox127");
 
   // S15.10.2.3_A1_T9.js
-  re = RegExp "(?:åb|çd)+|éf" --case_sensitive=false --multiline=false
-  m = re.first_matching "ÅÉKFÇDåb"
+  re = RegExp "(?:åb|çd)+|éf" --case-sensitive=false --multiline=false
+  m = re.first-matching "ÅÉKFÇDåb"
   expected = ["ÇDåb"]
   check m expected
 
   // S15.10.2.13_A2_T1.js
-  re = RegExp "[^]å" --case_sensitive=true --multiline=true
-  m = re.first_matching "å\nåbå"
+  re = RegExp "[^]å" --case-sensitive=true --multiline=true
+  m = re.first-matching "å\nåbå"
   expected = ["\nå"]
   check m expected
 
   // S15.10.2.7_A6_T1.js
-  re = RegExp "b{2,}ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åååbbbbçççddééééfffff"
+  re = RegExp "b{2,}ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åååbbbbçççddééééfffff"
   expected = ["bbbbç"]
   check m expected
 
   // S15.10.2.8_A3_T20.js
-  re = RegExp "^(Å)?(Å.*)\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "ÅÅÅ"
+  re = RegExp "^(Å)?(Å.*)\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "ÅÅÅ"
   expected = ["ÅÅÅ", "Å", "ÅÅ"]
   check m expected
 
   // S15.10.2.6_A2_T7.js
-  re = RegExp "^..^é" --case_sensitive=true --multiline=false
-  m = re.first_matching "åb\nçdé"
-  expect_equals null m
+  re = RegExp "^..^é" --case-sensitive=true --multiline=false
+  m = re.first-matching "åb\nçdé"
+  expect-equals null m
 
   // S15.10.2.13_A1_T4.js
   // Rejected for being ASCII-specific: var __executed = /q[ax-zb](?=\s+)/.exec("tqaqy ");
 
   // S15.10.2.7_A3_T4.js
-  re = RegExp "\\s+jåvå\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "jåvå\n\nøbjéçt"
-  expect_equals null m
+  re = RegExp "\\s+jåvå\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "jåvå\n\nøbjéçt"
+  expect-equals null m
 
   // S15.10.2.7_A3_T14.js
-  re = RegExp "b*b+" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbbbbbbbç"
+  re = RegExp "b*b+" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbbbbbbbç"
   expected = ["bbbbbbb"]
   check m expected
 
@@ -115,59 +115,59 @@ main:
   // Rejected for being ASCII-specific: var __executed = /^([a-z]+)*[a-z]$/.exec(__string);
 
   // S15.10.2.13_A1_T15.js
-  re = RegExp "[\\d][\\n][^\\d]" --case_sensitive=true --multiline=false
-  m = re.first_matching "łïné1\nłïné2"
+  re = RegExp "[\\d][\\n][^\\d]" --case-sensitive=true --multiline=false
+  m = re.first-matching "łïné1\nłïné2"
   expected = ["1\nł"]
   check m expected
 
   // S15.10.2.13_A1_T2.js
-  re = RegExp "å[]" --case_sensitive=true --multiline=false
-  m = re.first_matching "\x00\x00"
-  expect_equals null m
+  re = RegExp "å[]" --case-sensitive=true --multiline=false
+  m = re.first-matching "\x00\x00"
+  expect-equals null m
 
   // S15.10.2.13_A3_T4.js
   // Rejected for being ASCII-specific: var __executed = /[^\[\b\]]+/.exec("abcdef");
 
   // S15.10.2.6_A2_T1.js
-  re = RegExp "^m" --case_sensitive=true --multiline=false
-  m = re.first_matching "påïrs\nmåkés\tdøübłé"
-  expect_equals null m
+  re = RegExp "^m" --case-sensitive=true --multiline=false
+  m = re.first-matching "påïrs\nmåkés\tdøübłé"
+  expect-equals null m
 
   // S15.10.2.7_A3_T12.js
-  re = RegExp "(b+)(b+)(b+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbbbbbbbç"
+  re = RegExp "(b+)(b+)(b+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbbbbbbbç"
   expected = ["bbbbbbb", "bbbbb", "b", "b"]
   check m expected
 
   // S15.10.2.13_A1_T7.js
-  re = RegExp "åb[érst]dé" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdé"
-  expect_equals null m
+  re = RegExp "åb[érst]dé" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdé"
+  expect-equals null m
 
   // S15.10.2.8_A4_T2.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A1_T11.js
-  re = RegExp "bx{0,93}ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åååbbbbçççddééééfffff"
+  re = RegExp "bx{0,93}ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åååbbbbçççddééééfffff"
   expected = ["bç"]
   check m expected
 
   // S15.10.2.7_A6_T2.js
-  re = RegExp "b{8,}ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åååbbbbçççddééééfffff"
-  expect_equals null m
+  re = RegExp "b{8,}ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åååbbbbçççddééééfffff"
+  expect-equals null m
 
   // S15.10.2.8_A3_T22.js
-  re = RegExp "^(Å)?(Å.*)\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "Å"
+  re = RegExp "^(Å)?(Å.*)\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "Å"
   expected = ["Å", null, "Å"]
   check m expected
 
   // S15.10.2.13_A1_T6.js
-  re = RegExp "åb[érçst]dé" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdé"
+  re = RegExp "åb[érçst]dé" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdé"
   expected = ["åbçdé"]
   check m expected
 
@@ -178,36 +178,36 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[a-z]+\d+/.exec("__abc123.0");
 
   // S15.10.2.7_A4_T2.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching "åłïçé såïd: \"døn't\""
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching "åłïçé såïd: \"døn't\""
   expected = ["åłïçé såïd: "]
   check m expected
 
   // S15.10.2.7_A1_T1.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "thé ånswér ïs 42"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "thé ånswér ïs 42"
   expected = ["42"]
   check m expected
 
   // S15.10.2.8_A3_T17.js
-  re = RegExp "<bødy.*>((.*\\n?)*?)</bødy>" --case_sensitive=false --multiline=false
+  re = RegExp "<bødy.*>((.*\\n?)*?)</bødy>" --case-sensitive=false --multiline=false
   // Rejected input (__html);
 
   // S15.10.2.6_A2_T9.js
-  re = RegExp "^\\^+" --case_sensitive=true --multiline=false
-  m = re.first_matching "^^^x"
+  re = RegExp "^\\^+" --case-sensitive=true --multiline=false
+  m = re.first-matching "^^^x"
   expected = ["^^^"]
   check m expected
 
   // S15.10.2.7_A5_T10.js
-  re = RegExp "åb?ç?d?x?y?z" --case_sensitive=true --multiline=false
-  m = re.first_matching "123åz789"
+  re = RegExp "åb?ç?d?x?y?z" --case-sensitive=true --multiline=false
+  m = re.first-matching "123åz789"
   expected = ["åz"]
   check m expected
 
   // S15.10.2.8_A1_T4.js
-  re = RegExp "[Jj]åvå([Ss]çrïpt)?(?=\\:)" --case_sensitive=true --multiline=false
-  m = re.first_matching "tåsté øf jåvå: thé çøøkbøøk "
+  re = RegExp "[Jj]åvå([Ss]çrïpt)?(?=\\:)" --case-sensitive=true --multiline=false
+  m = re.first-matching "tåsté øf jåvå: thé çøøkbøøk "
   expected = ["jåvå", null]
   check m expected
 
@@ -215,14 +215,14 @@ main:
   // Rejected for being ASCII-specific: var __executed = /^p[a-z]/.exec("pairs\nmakes\tdouble\npesos");
 
   // S15.10.2.7_A5_T1.js
-  re = RegExp "jåvå(sçrïpt)?" --case_sensitive=true --multiline=false
-  m = re.first_matching "ståté: jåvåsçrïpt ïs éxténsïøn øf éçmå sçrïpt"
+  re = RegExp "jåvå(sçrïpt)?" --case-sensitive=true --multiline=false
+  m = re.first-matching "ståté: jåvåsçrïpt ïs éxténsïøn øf éçmå sçrïpt"
   expected = ["jåvåsçrïpt", "sçrïpt"]
   check m expected
 
   // S15.10.2.5_A1_T5.js
-  re = RegExp "(å*)b\\1+" --case_sensitive=true --multiline=false
-  m = re.first_matching "bååååç"
+  re = RegExp "(å*)b\\1+" --case-sensitive=true --multiline=false
+  m = re.first-matching "bååååç"
   expected = ["b", ""]
   check m expected
 
@@ -236,14 +236,14 @@ main:
   // Rejected for being ASCII-specific: var __executed = /Java(?!Script)([A-Z]\w*)/.exec("using of JavaBeans technology");
 
   // S15.10.2.8_A2_T11.js
-  re = RegExp "(?!å|b)|ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "d"
+  re = RegExp "(?!å|b)|ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "d"
   expected = [""]
   check m expected
 
   // S15.10.2.8_A2_T6.js
-  re = RegExp "(\\.(?!çøm|ørġ)|/)" --case_sensitive=true --multiline=false
-  m = re.first_matching "åh.ïnfø"
+  re = RegExp "(\\.(?!çøm|ørġ)|/)" --case-sensitive=true --multiline=false
+  m = re.first-matching "åh.ïnfø"
   expected = [".", "."]
   check m expected
 
@@ -254,12 +254,12 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\B[^z]{4}\B/.exec("devil arise\tforzzx\nevils");
 
   // S15.10.2.8_A3_T28.js
-  re = RegExp "(å)?(å)" --case_sensitive=true --multiline=false
+  re = RegExp "(å)?(å)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A1_T5.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "thé 1984 nøvéł"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "thé 1984 nøvéł"
   expected = ["1984"]
   check m expected
 
@@ -270,8 +270,8 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\bro/.exec("pilot\nsoviet robot\topenoffice");
 
   // S15.10.2.8_A3_T5.js
-  re = RegExp "å(bç)d(éf)ġ" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéfġ"
+  re = RegExp "å(bç)d(éf)ġ" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéfġ"
   expected = ["åbçdéfġ", "bç", "éf"]
   check m expected
 
@@ -282,31 +282,31 @@ main:
   // Rejected for being ASCII-specific: var __executed = /q[ax-zb](?=\s+)/.exec("tqa\t  qy ");
 
   // S15.10.2.7_A3_T1.js
-  re = RegExp "\\s+jåvå\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "łånġüåġé  jåvå\n"
+  re = RegExp "\\s+jåvå\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "łånġüåġé  jåvå\n"
   expected = ["  jåvå\n"]
   check m expected
 
   // S15.10.2.7_A2_T4.js
-  re = RegExp "b{8}" --case_sensitive=true --multiline=false
-  m = re.first_matching "åååbbbbçççddééééfffff"
-  expect_equals null m
+  re = RegExp "b{8}" --case-sensitive=true --multiline=false
+  m = re.first-matching "åååbbbbçççddééééfffff"
+  expect-equals null m
 
   // S15.10.2.7_A1_T3.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "thé 20000 Łéåġüés Ündér thé Séå bøøk"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "thé 20000 Łéåġüés Ündér thé Séå bøøk"
   expected = ["2000"]
   check m expected
 
   // S15.10.2.3_A1_T11.js
-  re = RegExp "11111|111" --case_sensitive=true --multiline=false
-  m = re.first_matching "1111111111111111"
+  re = RegExp "11111|111" --case-sensitive=true --multiline=false
+  m = re.first-matching "1111111111111111"
   expected = ["11111"]
   check m expected
 
   // S15.10.2.8_A3_T9.js
-  re = RegExp "(.{2}).+\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "ååbçdååbçd"
+  re = RegExp "(.{2}).+\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "ååbçdååbçd"
   expected = ["ååbçdåå", "åå"]
   check m expected
 
@@ -314,8 +314,8 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[a-z][^1-9][a-z]/.exec("a1b  b2c  c3d  def  f4g");
 
   // S15.10.2.7_A5_T11.js
-  re = RegExp "\\??\\??\\??\\??\\??" --case_sensitive=true --multiline=false
-  m = re.first_matching "?????"
+  re = RegExp "\\??\\??\\??\\??\\??" --case-sensitive=true --multiline=false
+  m = re.first-matching "?????"
   expected = ["?????"]
   check m expected
 
@@ -329,79 +329,79 @@ main:
   // Rejected for being ASCII-specific: var __executed = /([Jj]ava([Ss]cript)?)\sis\s(fun\w*)/.exec("Learning javaScript is funny, really");
 
   // S15.10.2.7_A5_T7.js
-  re = RegExp "x?y?z?" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçd"
+  re = RegExp "x?y?z?" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçd"
   expected = [""]
   check m expected
 
   // S15.10.2.7_A1_T10.js
-  re = RegExp "b{0,93}ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åååbbbbçççddééééfffff"
+  re = RegExp "b{0,93}ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åååbbbbçççddééééfffff"
   expected = ["bbbbç"]
   check m expected
 
   // S15.10.2.6_A2_T5.js
-  re = RegExp "^[^p]" --case_sensitive=true --multiline=true
-  m = re.first_matching "påïrs\nmåkés\tdøübłé\npésøs"
+  re = RegExp "^[^p]" --case-sensitive=true --multiline=true
+  m = re.first-matching "påïrs\nmåkés\tdøübłé\npésøs"
   expected = ["m"]
   check m expected
 
   // S15.10.2.8_A4_T4.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A3_T14.js
-  re = RegExp "å(.?)b\\1ç\\1d\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçd"
+  re = RegExp "å(.?)b\\1ç\\1d\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçd"
   expected = ["åbçd", ""]
   check m expected
 
   // S15.10.2.8_A4_T6.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A4_T4.js
   // Rejected for being ASCII-specific: var __executed = /\B\w\B/.exec("devils arise\tfor\nrevil");
 
   // S15.10.2.13_A2_T5.js
-  re = RegExp "å[^1-9]ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
+  re = RegExp "å[^1-9]ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
   expected = ["åbç"]
   check m expected
 
   // S15.10.2.7_A4_T9.js
-  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
-  m = re.first_matching "åłïçé çrïés øüt:\"\""
+  re = RegExp """["'][^"']*["']""" --case-sensitive=true --multiline=false
+  m = re.first-matching "åłïçé çrïés øüt:\"\""
   expected = [""""""""]
   check m expected
 
   // S15.10.2.7_A5_T6.js
-  re = RegExp "ø?pqrst" --case_sensitive=true --multiline=false
-  m = re.first_matching "pqrstüvw"
+  re = RegExp "ø?pqrst" --case-sensitive=true --multiline=false
+  m = re.first-matching "pqrstüvw"
   expected = ["pqrst"]
   check m expected
 
   // S15.10.2.7_A5_T9.js
-  re = RegExp "b?b?b?b" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbbbbç"
+  re = RegExp "b?b?b?b" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbbbbç"
   expected = ["bbbb"]
   check m expected
 
   // S15.10.2.7_A1_T7.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "0å01122b"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "0å01122b"
   expected = ["0112"]
   check m expected
 
   // S15.10.2.13_A2_T2.js
-  re = RegExp "å[^]" --case_sensitive=true --multiline=false
-  m = re.first_matching "   å\t\n"
+  re = RegExp "å[^]" --case-sensitive=true --multiline=false
+  m = re.first-matching "   å\t\n"
   expected = ["å\t"]
   check m expected
 
   // S15.10.2.7_A4_T10.js
-  re = RegExp "d*" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçddddéfġ"
+  re = RegExp "d*" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçddddéfġ"
   expected = [""]
   check m expected
 
@@ -409,36 +409,36 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[a-z]+\d+/.exec("x 2 ff 55 x2 as1 z12 abc12.0");
 
   // S15.10.2.6_A1_T2.js
-  re = RegExp "é\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "påïrs\nmåkés\tdøübłé"
+  re = RegExp "é\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "påïrs\nmåkés\tdøübłé"
   expected = ["é"]
   check m expected
 
   // S15.10.2.8_A1_T3.js
-  re = RegExp "[Jj]åvå([Ss]çrïpt)?(?=\\:)" --case_sensitive=true --multiline=false
-  m = re.first_matching "jüst Jåvåsçrïpt: thé wåy åf jédï"
+  re = RegExp "[Jj]åvå([Ss]çrïpt)?(?=\\:)" --case-sensitive=true --multiline=false
+  m = re.first-matching "jüst Jåvåsçrïpt: thé wåy åf jédï"
   expected = ["Jåvåsçrïpt", "sçrïpt"]
   check m expected
 
   // S15.10.2.8_A3_T10.js
-  re = RegExp "(\\d{3})(\\d{3})\\1\\2" --case_sensitive=true --multiline=false
-  m = re.first_matching "123456123456"
+  re = RegExp "(\\d{3})(\\d{3})\\1\\2" --case-sensitive=true --multiline=false
+  m = re.first-matching "123456123456"
   expected = ["123456123456", "123", "456"]
   check m expected
 
   // S15.10.2.7_A1_T9.js
-  re = RegExp "b{42,93}ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åååbbbbçççddééééfffff"
-  expect_equals null m
+  re = RegExp "b{42,93}ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åååbbbbçççddééééfffff"
+  expect-equals null m
 
   // S15.10.2.7_A3_T10.js
-  re = RegExp "ø+" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéfġ"
-  expect_equals null m
+  re = RegExp "ø+" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéfġ"
+  expect-equals null m
 
   // S15.10.2.7_A6_T6.js
-  re = RegExp "x{1,2}x{1,}" --case_sensitive=true --multiline=false
-  m = re.first_matching "xxxxxxx"
+  re = RegExp "x{1,2}x{1,}" --case-sensitive=true --multiline=false
+  m = re.first-matching "xxxxxxx"
   expected = ["xxxxxxx"]
   check m expected
 
@@ -446,8 +446,8 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[^\[\b\]]+/.exec("abc\bdef");
 
   // S15.10.2.6_A6_T3.js
-  re = RegExp "^.*?(:|\$)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Héłłø: Wørłd"
+  re = RegExp "^.*?(:|\$)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Héłłø: Wørłd"
   expected = ["Héłłø:", ":"]
   check m expected
 
@@ -455,95 +455,95 @@ main:
   // Rejected for being ASCII-specific: var __executed = /([xu]\d{2}([A-H]{2})?)\1/.exec("x09x12x01x01u00FFu00FFx04x04x23");
 
   // S15.10.2.7_A6_T3.js
-  re = RegExp "\\d{1,}" --case_sensitive=true --multiline=false
-  m = re.first_matching "wqé456646dsff"
+  re = RegExp "\\d{1,}" --case-sensitive=true --multiline=false
+  m = re.first-matching "wqé456646dsff"
   expected = ["456646"]
   check m expected
 
   // S15.10.2.8_A3_T26.js
-  re = RegExp "(å)?å" --case_sensitive=true --multiline=false
+  re = RegExp "(å)?å" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A4_T1.js
   // Rejected for being ASCII-specific: var __executed = /\Bevil\B/.exec("devils arise\tfor\nevil");
 
   // S15.10.2.6_A6_T1.js
-  re = RegExp "^.*?\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "Héłłø Wørłd"
+  re = RegExp "^.*?\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "Héłłø Wørłd"
   expected = ["Héłłø Wørłd"]
   check m expected
 
   // S15.10.2.7_A5_T4.js
-  re = RegExp "çd?é" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéf"
+  re = RegExp "çd?é" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéf"
   expected = ["çdé"]
   check m expected
 
   // S15.10.2.8_A3_T12.js
-  re = RegExp "(å(b(ç)))(d(é(f)))" --case_sensitive=true --multiline=false
-  m = re.first_matching "xåbçdéfġ"
+  re = RegExp "(å(b(ç)))(d(é(f)))" --case-sensitive=true --multiline=false
+  m = re.first-matching "xåbçdéfġ"
   expected = ["åbçdéf", "åbç", "bç", "ç", "déf", "éf", "f"]
   check m expected
 
   // S15.10.2.3_A1_T16.js
-  re = RegExp "()|" --case_sensitive=true --multiline=false
-  m = re.first_matching ""
+  re = RegExp "()|" --case-sensitive=true --multiline=false
+  m = re.first-matching ""
   expected = ["", ""]
   check m expected
 
   // S15.10.2.7_A1_T6.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "0å011b"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "0å011b"
   expected = ["011"]
   check m expected
 
   // S15.10.2.7_A3_T2.js
-  re = RegExp "\\s+jåvå\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "\t jåvå øbjéçt"
+  re = RegExp "\\s+jåvå\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "\t jåvå øbjéçt"
   expected = ["\t jåvå "]
   check m expected
 
   // S15.10.2.13_A1_T17.js
-  re = RegExp "[]" --case_sensitive=true --multiline=false
-  m = re.first_matching "å[b\n[]\tç]d"
+  re = RegExp "[]" --case-sensitive=true --multiline=false
+  m = re.first-matching "å[b\n[]\tç]d"
 
   // S15.10.2.3_A1_T12.js
-  re = RegExp "xyz|..." --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
+  re = RegExp "xyz|..." --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
   expected = ["åbç"]
   check m expected
 
   // S15.10.2.7_A4_T20.js
-  re = RegExp ".*" --case_sensitive=true --multiline=false
-  m = re.first_matching "å1b2ç3"
+  re = RegExp ".*" --case-sensitive=true --multiline=false
+  m = re.first-matching "å1b2ç3"
   expected = ["å1b2ç3"]
   check m expected
 
   // S15.10.2.7_A4_T12.js
-  re = RegExp "çx*d" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéfġ"
+  re = RegExp "çx*d" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéfġ"
   expected = ["çd"]
   check m expected
 
   // S15.10.2.8_A3_T21.js
-  re = RegExp "^(Å)?(Å.*)\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "ÅÅ"
+  re = RegExp "^(Å)?(Å.*)\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "ÅÅ"
   expected = ["ÅÅ", "Å", "Å"]
   check m expected
 
   // S15.10.2.8_A3_T27.js
-  re = RegExp "å|(b)" --case_sensitive=true --multiline=false
+  re = RegExp "å|(b)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A3_T8.js
-  re = RegExp "(åå).+\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "ååbçdååbçd"
+  re = RegExp "(åå).+\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "ååbçdååbçd"
   expected = ["ååbçdåå", "åå"]
   check m expected
 
   // S15.10.2.7_A5_T2.js
-  re = RegExp "jåvå(sçrïpt)?" --case_sensitive=true --multiline=false
-  m = re.first_matching "ståté: jåvå ånd jåvåsçrïpt åré våstły dïfférént"
+  re = RegExp "jåvå(sçrïpt)?" --case-sensitive=true --multiline=false
+  m = re.first-matching "ståté: jåvå ånd jåvåsçrïpt åré våstły dïfférént"
   expected = ["jåvå", null]
   check m expected
 
@@ -551,37 +551,37 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\bop/.exec("pilot\nsoviet robot\topenoffice");
 
   // S15.10.2.3_A1_T2.js
-  re = RegExp "((å)|(åb))((ç)|(bç))" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
+  re = RegExp "((å)|(åb))((ç)|(bç))" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
   expected = ["åbç", "å", "å", null, "bç", null, "bç"]
   check m expected
 
   // S15.10.2.6_A6_T2.js
-  re = RegExp "^.*?" --case_sensitive=true --multiline=false
-  m = re.first_matching "Héłłø Wørłd"
+  re = RegExp "^.*?" --case-sensitive=true --multiline=false
+  m = re.first-matching "Héłłø Wørłd"
   expected = [""]
   check m expected
 
   // S15.10.2.3_A1_T17.js
-  re = RegExp "|()" --case_sensitive=true --multiline=false
-  m = re.first_matching ""
+  re = RegExp "|()" --case-sensitive=true --multiline=false
+  m = re.first-matching ""
   expected = ["", null]
   check m expected
 
   // S15.10.2.3_A1_T8.js
-  re = RegExp "(?:åb|çd)+|éf" --case_sensitive=false --multiline=false
-  m = re.first_matching "ÅÉKFÇD"
+  re = RegExp "(?:åb|çd)+|éf" --case-sensitive=false --multiline=false
+  m = re.first-matching "ÅÉKFÇD"
   expected = ["ÇD"]
   check m expected
 
   // S15.10.2.13_A1_T1.js
-  re = RegExp "[]å" --case_sensitive=true --multiline=false
-  m = re.first_matching "\x00\x00"
-  expect_equals null m
+  re = RegExp "[]å" --case-sensitive=true --multiline=false
+  m = re.first-matching "\x00\x00"
+  expect-equals null m
 
   // S15.10.2.3_A1_T1.js
-  re = RegExp "å|åb" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
+  re = RegExp "å|åb" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
   expected = ["å"]
   check m expected
 
@@ -589,39 +589,39 @@ main:
   // Rejected for being ASCII-specific: var __executed = /^(([a-z]+)*[a-z]\.)+[a-z]{2,}$/.exec(__string);
 
   // S15.10.2.7_A4_T18.js
-  re = RegExp "[\\d]*[\\s]*bç." --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéf"
+  re = RegExp "[\\d]*[\\s]*bç." --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéf"
   expected = ["bçd"]
   check m expected
 
   // S15.10.2.3_A1_T7.js
-  re = RegExp "åb|çd|éf" --case_sensitive=true --multiline=false
-  m = re.first_matching "ÅÉKFÇD"
-  expect_equals null m
+  re = RegExp "åb|çd|éf" --case-sensitive=true --multiline=false
+  m = re.first-matching "ÅÉKFÇD"
+  expect-equals null m
 
   // S15.10.2.6_A4_T8.js
   // Rejected for being ASCII-specific: var __executed = /\B\w{4}\B/.exec("devil arise\tforzzx\nevils");
 
   // S15.10.2.7_A4_T16.js
-  re = RegExp "(x+)(x*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "xxxxxxx"
+  re = RegExp "(x+)(x*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "xxxxxxx"
   expected = ["xxxxxxx", "xxxxxxx", ""]
   check m expected
 
   // S15.10.2.7_A1_T2.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "thé 7 møvïé"
-  expect_equals null m
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "thé 7 møvïé"
+  expect-equals null m
 
   // S15.10.2.7_A3_T11.js
-  re = RegExp "d+" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéfġ"
+  re = RegExp "d+" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéfġ"
   expected = ["d"]
   check m expected
 
   // S15.10.2.7_A2_T3.js
-  re = RegExp "b{2}ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åååbbbbçççddééééfffff"
+  re = RegExp "b{2}ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åååbbbbçççddééééfffff"
   expected = ["bbç"]
   check m expected
 
@@ -629,8 +629,8 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\d{3}|[a-z]{4}/.exec("2, 12 and of course repeat 12");
 
   // S15.10.2.7_A4_T4.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching "åłïçé \"swéép\": \"døn't\""
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching "åłïçé \"swéép\": \"døn't\""
   expected = ["åłïçé "]
   check m expected
 
@@ -638,8 +638,8 @@ main:
   // Rejected for being ASCII-specific: var __executed = /([xu]\d{2}([A-H]{2})?)\1/.exec("x09x12x01x05u00FFu00FFx04x04x23");
 
   // S15.10.2.8_A3_T4.js
-  re = RegExp "(åbç)" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
+  re = RegExp "(åbç)" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
   expected = ["åbç", "åbç"]
   check m expected
 
@@ -647,36 +647,36 @@ main:
   // Rejected for being ASCII-specific: var __executed = /^p[b-z]/m.exec("pairs\nmakes\tdouble\npesos");
 
   // S15.10.2.8_A3_T23.js
-  re = RegExp "(Å)?(Å.*)" --case_sensitive=true --multiline=false
+  re = RegExp "(Å)?(Å.*)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A2_T2.js
-  re = RegExp "^m" --case_sensitive=true --multiline=true
-  m = re.first_matching "påïrs\nmåkés\tdøübłé"
+  re = RegExp "^m" --case-sensitive=true --multiline=true
+  m = re.first-matching "påïrs\nmåkés\tdøübłé"
   expected = ["m"]
   check m expected
 
   // S15.10.2.3_A1_T15.js
-  re = RegExp "(Røb)|(Bøb)|(Røbért)|(Bøbby)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Hï Bøb"
+  re = RegExp "(Røb)|(Bøb)|(Røbért)|(Bøbby)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Hï Bøb"
   expected = ["Bøb", null, "Bøb", null, null]
   check m expected
 
   // S15.10.2.6_A6_T4.js
-  re = RegExp "^.*(:|\$)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Héłłø: Wørłd"
+  re = RegExp "^.*(:|\$)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Héłłø: Wørłd"
   expected = ["Héłłø: Wørłd", ""]
   check m expected
 
   // S15.10.2.7_A1_T12.js
-  re = RegExp ".{0,93}" --case_sensitive=true --multiline=false
-  m = re.first_matching "wéïrwérdf"
+  re = RegExp ".{0,93}" --case-sensitive=true --multiline=false
+  m = re.first-matching "wéïrwérdf"
   expected = ["wéïrwérdf"]
   check m expected
 
   // S15.10.2.13_A1_T9.js
-  re = RegExp "[1234567].{2}" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç6défġhïjkł"
+  re = RegExp "[1234567].{2}" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç6défġhïjkł"
   expected = ["6dé"]
   check m expected
 
@@ -684,12 +684,12 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\b(\w+) \1\b/.exec("do you listen the the band");
 
   // S15.10.2.8_A3_T24.js
-  re = RegExp "(Å)?(Å.*)" --case_sensitive=true --multiline=false
+  re = RegExp "(Å)?(Å.*)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A4_T5.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching "åłïçé \"swéép\": \"døn't\""
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching "åłïçé \"swéép\": \"døn't\""
   expected = ["åłïçé "]
   check m expected
 
@@ -697,9 +697,9 @@ main:
   // Rejected for being ASCII-specific: var __executed = /a[a-z]{2,4}?/.exec("abcdefghi");
 
   // S15.10.2.7_A4_T21.js
-  re = RegExp "[xyz]*1" --case_sensitive=true --multiline=false
-  m = re.first_matching "å0.b2.ç3"
-  expect_equals null m
+  re = RegExp "[xyz]*1" --case-sensitive=true --multiline=false
+  m = re.first-matching "å0.b2.ç3"
+  expect-equals null m
 
   // S15.10.2.13_A1_T3.js
   // Rejected for being ASCII-specific: var __executed = /q[ax-zb](?=\s+)/.exec("qYqy ");
@@ -708,38 +708,38 @@ main:
   // Rejected for not using literal regexp: var __executed = __re.exec(__strOriginal);
 
   // S15.10.2.7_A4_T7.js
-  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
-  m = re.first_matching "åłïçé çrïés øüt: 'døn't'"
+  re = RegExp """["'][^"']*["']""" --case-sensitive=true --multiline=false
+  m = re.first-matching "åłïçé çrïés øüt: 'døn't'"
   expected = ["'døn'"]
   check m expected
 
   // S15.10.2.3_A1_T13.js
-  re = RegExp "(.)..|åbç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
+  re = RegExp "(.)..|åbç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
   expected = ["åbç", "å"]
   check m expected
 
   // S15.10.2.8_A2_T9.js
-  re = RegExp "(?!å|b)|ç" --case_sensitive=true --multiline=false
-  m = re.first_matching ""
+  re = RegExp "(?!å|b)|ç" --case-sensitive=true --multiline=false
+  m = re.first-matching ""
   expected = [""]
   check m expected
 
   // S15.10.2.6_A1_T3.js
-  re = RegExp "s\$" --case_sensitive=true --multiline=true
-  m = re.first_matching "påïrs\nmåkés\tdøübłé"
+  re = RegExp "s\$" --case-sensitive=true --multiline=true
+  m = re.first-matching "påïrs\nmåkés\tdøübłé"
   expected = ["s"]
   check m expected
 
   // S15.10.2.8_A3_T13.js
-  re = RegExp "(å(b(ç)))(d(é(f)))\\2\\5" --case_sensitive=true --multiline=false
-  m = re.first_matching "xåbçdéfbçéfġ"
+  re = RegExp "(å(b(ç)))(d(é(f)))\\2\\5" --case-sensitive=true --multiline=false
+  m = re.first-matching "xåbçdéfbçéfġ"
   expected = ["åbçdéfbçéf", "åbç", "bç", "ç", "déf", "éf", "f"]
   check m expected
 
   // S15.10.2.7_A6_T4.js
-  re = RegExp "(123){1,}" --case_sensitive=true --multiline=false
-  m = re.first_matching "123123"
+  re = RegExp "(123){1,}" --case-sensitive=true --multiline=false
+  m = re.first-matching "123123"
   expected = ["123123", "123"]
   check m expected
 
@@ -747,23 +747,23 @@ main:
   // Rejected for being ASCII-specific: var __executed = /op\b/.test("pilot\nsoviet robot\topenoffice");
 
   // S15.10.2.7_A4_T19.js
-  re = RegExp "bç..[\\d]*[\\s]*" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéf"
+  re = RegExp "bç..[\\d]*[\\s]*" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéf"
   expected = ["bçdé"]
   check m expected
 
   // S15.10.2.13_A2_T6.js
-  re = RegExp "å[^b]ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
-  expect_equals null m
+  re = RegExp "å[^b]ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
+  expect-equals null m
 
   // S15.10.2.8_A2_T5.js
   // Rejected for being ASCII-specific: var __executed = /Java(?!Script)([A-Z]\w*)/.exec("JavaScr oops ipt ");
 
   // S15.10.2.7_A4_T8.js
-  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
-  m = re.first_matching "åłïçé çrïés øüt: døn't"
-  expect_equals null m
+  re = RegExp """["'][^"']*["']""" --case-sensitive=true --multiline=false
+  m = re.first-matching "åłïçé çrïés øüt: døn't"
+  expect-equals null m
 
   // S15.10.2.6_A1_T5.js
   // Rejected for using /g flag: var __executed = /es$/mg.exec("pairs\nmakes\tdoubl\u0065s");
@@ -772,9 +772,9 @@ main:
   // Rejected for being ASCII-specific: var __executed = /^([a-z]+)*[a-z]$/.exec(__string);
 
   // S15.10.2.8_A2_T8.js
-  re = RegExp "(\\.(?!çøm|ørġ)|/)" --case_sensitive=true --multiline=false
-  m = re.first_matching "åh.çøm"
-  expect_equals null m
+  re = RegExp "(\\.(?!çøm|ørġ)|/)" --case-sensitive=true --multiline=false
+  m = re.first-matching "åh.çøm"
+  expect-equals null m
 
   // S15.10.2.8_A3_T3.js
   // Rejected for being ASCII-specific: var __executed = /([Jj]ava([Ss]cript)?)\sis\s(fun\w*)/.test("Developing with JavaScript is dangerous, do not try it without assistance");
@@ -786,24 +786,24 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\B\B\B\B\B\Bbot\b\b\b\b\b\b\b/.exec("robot wall-e");
 
   // S15.10.2.8_A3_T7.js
-  re = RegExp "(åå)bçd\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "ååbçdååbçd"
+  re = RegExp "(åå)bçd\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "ååbçdååbçd"
   expected = ["ååbçdåå", "åå"]
   check m expected
 
   // S15.10.2.8_A3_T6.js
-  re = RegExp "(.{3})(.{4})" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéfġh"
+  re = RegExp "(.{3})(.{4})" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéfġh"
   expected = ["åbçdéfġ", "åbç", "défġ"]
   check m expected
 
   // S15.10.2.8_A4_T5.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A2_T10.js
-  re = RegExp "^\\d+" --case_sensitive=true --multiline=true
-  m = re.first_matching "åbç\n123xyz"
+  re = RegExp "^\\d+" --case-sensitive=true --multiline=true
+  m = re.first-matching "åbç\n123xyz"
   expected = ["123"]
   check m expected
 
@@ -814,25 +814,25 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[^"]*/.exec('"beast"-nickname');
 
   // S15.10.2.8_A1_T5.js
-  re = RegExp "[Jj]åvå([Ss]çrïpt)?(?=\\:)" --case_sensitive=true --multiline=false
-  m = re.first_matching "rhïnø ïs JåvåSçrïpt énġïné"
-  expect_equals null m
+  re = RegExp "[Jj]åvå([Ss]çrïpt)?(?=\\:)" --case-sensitive=true --multiline=false
+  m = re.first-matching "rhïnø ïs JåvåSçrïpt énġïné"
+  expect-equals null m
 
   // S15.10.2.13_A1_T11.js
-  re = RegExp "åb[.]?ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
+  re = RegExp "åb[.]?ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
   expected = ["åbç"]
   check m expected
 
   // S15.10.2.7_A1_T8.js
-  re = RegExp "b{2,3}ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åååbbbbçççddééééfffff"
+  re = RegExp "b{2,3}ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åååbbbbçççddééééfffff"
   expected = ["bbbç"]
   check m expected
 
   // S15.10.2.7_A5_T8.js
-  re = RegExp "x?åy?bz?ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçd"
+  re = RegExp "x?åy?bz?ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçd"
   expected = ["åbç"]
   check m expected
 
@@ -840,18 +840,18 @@ main:
   // Rejected for being ASCII-specific: var __executed = /so\b/.test("pilot\nsoviet robot\topenoffice");
 
   // S15.10.2.8_A4_T1.js
-  re = RegExp "åb.dé" --case_sensitive=true --multiline=false
+  re = RegExp "åb.dé" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A4_T15.js
-  re = RegExp "(\\d*)\\d(\\d+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "1234567890"
+  re = RegExp "(\\d*)\\d(\\d+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "1234567890"
   expected = ["1234567890", "12345678", "0"]
   check m expected
 
   // S15.10.2.3_A1_T6.js
-  re = RegExp "åb|çd|éf" --case_sensitive=false --multiline=false
-  m = re.first_matching "ÅÉKFÇD"
+  re = RegExp "åb|çd|éf" --case-sensitive=false --multiline=false
+  m = re.first-matching "ÅÉKFÇD"
   expected = ["ÇD"]
   check m expected
 
@@ -859,8 +859,8 @@ main:
   // Rejected for being ASCII-specific: var __executed = /ot\b/.exec("pilot\nsoviet robot\topenoffice");
 
   // S15.10.2.7_A1_T4.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "thé Fåhrénhéït 451 bøøk"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "thé Fåhrénhéït 451 bøøk"
   expected = ["451"]
   check m expected
 
@@ -871,15 +871,15 @@ main:
   // Rejected for being ASCII-specific: var __executed = /a[^b-z]\s+/.exec("ab an az aY n");
 
   // S15.10.2.8_A4_T3.js
-  re = RegExp ".*å.*" --case_sensitive=true --multiline=false
+  re = RegExp ".*å.*" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A3_T8.js
   // Rejected for being ASCII-specific: var __executed = /[a-z]+(\d+)/.exec("__abc123.0");
 
   // S15.10.2.8_A3_T19.js
-  re = RegExp "([\\S]+([ \\t]+[\\S]+)*)[ \\t]*=[ \\t]*[\\S]+" --case_sensitive=true --multiline=false
-  m = re.first_matching "Çøürsé_Çréåtør = Tést"
+  re = RegExp "([\\S]+([ \\t]+[\\S]+)*)[ \\t]*=[ \\t]*[\\S]+" --case-sensitive=true --multiline=false
+  m = re.first-matching "Çøürsé_Çréåtør = Tést"
   expected = ["Çøürsé_Çréåtør = Tést", "Çøürsé_Çréåtør", null]
   check m expected
 
@@ -893,34 +893,34 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[a-z]+/.exec(__string);
 
   // S15.10.2.5_A1_T4.js
-  re = RegExp "(z)((å+)?(b+)?(ç))*" --case_sensitive=true --multiline=false
-  m = re.first_matching "zååçbbbçåç"
+  re = RegExp "(z)((å+)?(b+)?(ç))*" --case-sensitive=true --multiline=false
+  m = re.first-matching "zååçbbbçåç"
   expected = ["zååçbbbçåç", "z", "åç", "å", null, "ç"]
   check m expected
 
   // S15.10.2.7_A3_T13.js
-  re = RegExp "(b+)(b*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbbbbbbbç"
+  re = RegExp "(b+)(b*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbbbbbbbç"
   expected = ["bbbbbbb", "bbbbbbb", ""]
   check m expected
 
   // S15.10.2.7_A4_T6.js
-  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
-  m = re.first_matching "åłïçé \"swéép\": \"døn't\""
+  re = RegExp """["'][^"']*["']""" --case-sensitive=true --multiline=false
+  m = re.first-matching "åłïçé \"swéép\": \"døn't\""
   expected = ["\"swéép\""]
   check m expected
 
   // S15.10.2.7_A3_T3.js
-  re = RegExp "\\s+jåvå\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "\t jåvåx påçkåġé"
-  expect_equals null m
+  re = RegExp "\\s+jåvå\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "\t jåvåx påçkåġé"
+  expect-equals null m
 
   // S15.10.2.13_A3_T1.js
   // Rejected for being ASCII-specific: var __executed = /.[\b]./.exec("abc\bdef");
 
   // S15.10.2.13_A1_T14.js
-  re = RegExp "[*&\$]{3}" --case_sensitive=true --multiline=false
-  m = re.first_matching "123*&\$åbç"
+  re = RegExp "[*&\$]{3}" --case-sensitive=true --multiline=false
+  m = re.first-matching "123*&\$åbç"
   expected = ["*&\$"]
   check m expected
 
@@ -928,15 +928,15 @@ main:
   // Rejected for being ASCII-specific: var __executed = /Java(?!Script)([A-Z]\w*)/.test("i'm a JavaScripter ");
 
   // S15.10.2.7_A5_T5.js
-  re = RegExp "çdx?é" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéf"
+  re = RegExp "çdx?é" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéf"
   expected = ["çdé"]
   check m expected
 
   // S15.10.2.6_A2_T8.js
-  re = RegExp "^xxx" --case_sensitive=true --multiline=false
-  m = re.first_matching "yyyyy"
-  expect_equals null m
+  re = RegExp "^xxx" --case-sensitive=true --multiline=false
+  m = re.first-matching "yyyyy"
+  expect-equals null m
 
   // S15.10.2.6_A3_T3.js
   // Rejected for being ASCII-specific: var __executed = /\bot/.test("pilot\nsoviet robot\topenoffice");
@@ -945,14 +945,14 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[^o]t\b/i.exec("pilOt\nsoviet robot\topenoffice");
 
   // S15.10.2.6_A5_T1.js
-  re = RegExp "^^^^^^^røbøt\$\$\$\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "røbøt"
+  re = RegExp "^^^^^^^røbøt\$\$\$\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "røbøt"
   expected = ["røbøt"]
   check m expected
 
   // S15.10.2.7_A4_T11.js
-  re = RegExp "çd*" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçddddéfġ"
+  re = RegExp "çd*" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçddddéfġ"
   expected = ["çdddd"]
   check m expected
 
@@ -960,8 +960,8 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[^o]t\b/.exec("pilOt\nsoviet robot\topenoffice");
 
   // S15.10.2.8_A3_T11.js
-  re = RegExp "å(..(..)..)" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdéfġh"
+  re = RegExp "å(..(..)..)" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdéfġh"
   expected = ["åbçdéfġ", "bçdéfġ", "dé"]
   check m expected
 
@@ -972,26 +972,26 @@ main:
   // Rejected for being ASCII-specific: var __executed = /[^\b]+/g.exec("easy\bto\u0008ride");
 
   // S15.10.2.8_A4_T8.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A2_T1.js
-  re = RegExp "(.*?)å(?!(å+)b\\2ç)\\2(.*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "båååbååç"
+  re = RegExp "(.*?)å(?!(å+)b\\2ç)\\2(.*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "båååbååç"
   expected = ["båååbååç", "bå", null, "åbååç"]
   check m expected
 
   // S15.10.2.6_A1_T1.js
-  re = RegExp "s\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "påïrs\nmåkés\tdøübłé"
-  expect_equals null m
+  re = RegExp "s\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "påïrs\nmåkés\tdøübłé"
+  expect-equals null m
 
   // S15.10.2.6_A4_T3.js
   // Rejected for being ASCII-specific: var __executed = /\Bo\B/i.exec("devils arise\tfOr\nrevil");
 
   // S15.10.2.8_A1_T1.js
-  re = RegExp "(?=(å+))" --case_sensitive=true --multiline=false
-  m = re.first_matching "båååbåç"
+  re = RegExp "(?=(å+))" --case-sensitive=true --multiline=false
+  m = re.first-matching "båååbåç"
   expected = ["", "ååå"]
   check m expected
 
@@ -999,42 +999,42 @@ main:
   // Rejected for not using literal regexp: var __executed = __re.exec(__strOriginal);
 
   // S15.10.2.7_A4_T13.js
-  re = RegExp "(x*)(x+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "xxxxxxx"
+  re = RegExp "(x*)(x+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "xxxxxxx"
   expected = ["xxxxxxx", "xxxxxx", "x"]
   check m expected
 
   // S15.10.2.7_A4_T17.js
-  re = RegExp "x*y+\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "xxxxxxyyyyyy"
+  re = RegExp "x*y+\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "xxxxxxyyyyyy"
   expected = ["xxxxxxyyyyyy"]
   check m expected
 
   // S15.10.2.5_A1_T3.js
-  re = RegExp "(åå|ååbååç|bå|b|ç)*" --case_sensitive=true --multiline=false
-  m = re.first_matching "ååbååç"
+  re = RegExp "(åå|ååbååç|bå|b|ç)*" --case-sensitive=true --multiline=false
+  m = re.first-matching "ååbååç"
   expected = ["ååbå", "bå"]
   check m expected
 
   // S15.10.2.6_A2_T6.js
-  re = RegExp "^åb" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdé"
+  re = RegExp "^åb" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdé"
   expected = ["åb"]
   check m expected
 
   // S15.10.2.7_A3_T9.js
-  re = RegExp "d+" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbçdddddéfġ"
+  re = RegExp "d+" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbçdddddéfġ"
   expected = ["ddddd"]
   check m expected
 
   // S15.10.2.8_A3_T25.js
-  re = RegExp "(Å)?(Å.*)" --case_sensitive=true --multiline=false
+  re = RegExp "(Å)?(Å.*)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A6_T5.js
-  re = RegExp "(123){1,}x\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "123123x123"
+  re = RegExp "(123){1,}x\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "123123x123"
   expected = ["123123x123", "123"]
   check m expected
 
@@ -1042,16 +1042,16 @@ main:
   // Rejected for being ASCII-specific: var __executed = /^(([a-z]+)*([a-z])\.)+[a-z]{2,}$/.exec(__string);
 
   // S15.10.2.8_A4_T7.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A4_T9.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A2_T7.js
-  re = RegExp "(\\.(?!çøm|ørġ)|/)" --case_sensitive=true --multiline=false
-  m = re.first_matching "åh/ïnfø"
+  re = RegExp "(\\.(?!çøm|ørġ)|/)" --case-sensitive=true --multiline=false
+  m = re.first-matching "åh/ïnfø"
   expected = ["/", "/"]
   check m expected
 
@@ -1059,14 +1059,14 @@ main:
   // Rejected for being ASCII-specific: var __executed = /Java(?!Script)([A-Z]\w*)/.test("using of Java language");
 
   // S15.10.2.7_A4_T3.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching "béføré'ï'stårt"
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching "béføré'ï'stårt"
   expected = ["béføré'ï'stårt"]
   check m expected
 
   // S15.10.2.7_A5_T12.js
-  re = RegExp ".?.?.?.?.?.?.?" --case_sensitive=true --multiline=false
-  m = re.first_matching "tést"
+  re = RegExp ".?.?.?.?.?.?.?" --case-sensitive=true --multiline=false
+  m = re.first-matching "tést"
   expected = ["tést"]
   check m expected
 
@@ -1083,25 +1083,25 @@ main:
   // Rejected for being ASCII-specific: var __executed = /\w{3}\d?/.exec("CELL\uFFDDbox127");
 
   // S15.10.2.8_A2_T10.js
-  re = RegExp "(?!å|b)|ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "bç"
+  re = RegExp "(?!å|b)|ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "bç"
   expected = [""]
   check m expected
 
   // S15.10.2.13_A1_T12.js
-  re = RegExp "å[b]ç" --case_sensitive=true --multiline=false
-  m = re.first_matching "åbç"
+  re = RegExp "å[b]ç" --case-sensitive=true --multiline=false
+  m = re.first-matching "åbç"
   expected = ["åbç"]
   check m expected
 
   // S15.10.2.8_A1_T2.js
-  re = RegExp "(?=(å+))å*b\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "båååbåç"
+  re = RegExp "(?=(å+))å*b\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "båååbåç"
   expected = ["åbå", "å"]
   check m expected
 
   // S15.10.2.3_A1_T14.js
-  re = RegExp ".+: ġr(å|é)y" --case_sensitive=true --multiline=false
-  m = re.first_matching "çøłør: ġréy"
+  re = RegExp ".+: ġr(å|é)y" --case-sensitive=true --multiline=false
+  m = re.first-matching "çøłør: ġréy"
   expected = ["çøłør: ġréy", "é"]
   check m expected

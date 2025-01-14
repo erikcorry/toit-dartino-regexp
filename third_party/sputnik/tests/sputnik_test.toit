@@ -8,13 +8,13 @@ import regexp show RegExp
 import regexp
 
 check match expected:
-  expect_equals match.capture_count (expected.size - 1)
+  expect-equals match.capture-count (expected.size - 1)
   actual := []
-  (match.capture_count + 1).repeat:
+  (match.capture-count + 1).repeat:
     actual.add match[it]
   if actual != expected:
     print "Expected\n$expected, got\n$actual"
-  expect_equals expected actual
+  expect-equals expected actual
 
 main:
   re := null
@@ -22,20 +22,20 @@ main:
   expected := null
 
   // S15.10.2.3_A1_T10.js
-  re = RegExp "(?:ab|cd)+|ef" --case_sensitive=false --multiline=false
-  m = re.first_matching "AEKeFCDab"
+  re = RegExp "(?:ab|cd)+|ef" --case-sensitive=false --multiline=false
+  m = re.first-matching "AEKeFCDab"
   expected = ["eF"]
   check m expected
 
   // S15.10.2.13_A2_T8.js
-  re = RegExp "[^]" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc#\$%def%&*@ghi"
+  re = RegExp "[^]" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc#\$%def%&*@ghi"
   expected = ["a"]
   check m expected
 
   // S15.10.2.6_A3_T14.js
-  re = RegExp "e\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
+  re = RegExp "e\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
   expected = ["e"]
   check m expected
 
@@ -43,344 +43,344 @@ main:
   // Rejected for using /g flag: var __executed = /[^e]$/mg.exec("pairs\nmakes\tdouble");
 
   // S15.10.2.3_A1_T5.js
-  re = RegExp "\\d{3}|[a-z]{4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "2, 12 and 23 AND 0.00.1"
-  expect_equals null m
+  re = RegExp "\\d{3}|[a-z]{4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "2, 12 and 23 AND 0.00.1"
+  expect-equals null m
 
   // S15.10.2.7_A4_T14.js
-  re = RegExp "(\\d*)(\\d+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "1234567890"
+  re = RegExp "(\\d*)(\\d+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "1234567890"
   expected = ["1234567890", "123456789", "0"]
   check m expected
 
   // S15.10.2.7_A5_T3.js
-  re = RegExp "java(script)?" --case_sensitive=true --multiline=false
-  m = re.first_matching "state: both Java and JavaScript used in web development"
-  expect_equals null m
+  re = RegExp "java(script)?" --case-sensitive=true --multiline=false
+  m = re.first-matching "state: both Java and JavaScript used in web development"
+  expect-equals null m
 
   // S15.10.2.9_A1_T5.js
-  re = RegExp "(a*)b\\1+" --case_sensitive=true --multiline=false
-  m = re.first_matching "baaac"
+  re = RegExp "(a*)b\\1+" --case-sensitive=true --multiline=false
+  m = re.first-matching "baaac"
   expected = ["b", ""]
   check m expected
 
   // S15.10.2.6_A3_T11.js
-  re = RegExp "\\b\\w{5}\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
+  re = RegExp "\\b\\w{5}\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
   expected = ["pilot"]
   check m expected
 
   // S15.10.2.7_A2_T1.js
-  re = RegExp "\\w{3}\\d?" --case_sensitive=true --multiline=false
-  m = re.first_matching "CE\uffffL\uffddbox127"
+  re = RegExp "\\w{3}\\d?" --case-sensitive=true --multiline=false
+  m = re.first-matching "CE\uffffL\uffddbox127"
   expected = ["box1"]
   check m expected
 
   // S15.10.2.3_A1_T9.js
-  re = RegExp "(?:ab|cd)+|ef" --case_sensitive=false --multiline=false
-  m = re.first_matching "AEKFCDab"
+  re = RegExp "(?:ab|cd)+|ef" --case-sensitive=false --multiline=false
+  m = re.first-matching "AEKFCDab"
   expected = ["CDab"]
   check m expected
 
   // S15.10.2.13_A2_T1.js
-  re = RegExp "[^]a" --case_sensitive=true --multiline=true
-  m = re.first_matching "a\naba"
+  re = RegExp "[^]a" --case-sensitive=true --multiline=true
+  m = re.first-matching "a\naba"
   expected = ["\na"]
   check m expected
 
   // S15.10.2.7_A6_T1.js
-  re = RegExp "b{2,}c" --case_sensitive=true --multiline=false
-  m = re.first_matching "aaabbbbcccddeeeefffff"
+  re = RegExp "b{2,}c" --case-sensitive=true --multiline=false
+  m = re.first-matching "aaabbbbcccddeeeefffff"
   expected = ["bbbbc"]
   check m expected
 
   // S15.10.2.8_A3_T20.js
-  re = RegExp "^(A)?(A.*)\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "AAA"
+  re = RegExp "^(A)?(A.*)\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "AAA"
   expected = ["AAA", "A", "AA"]
   check m expected
 
   // S15.10.2.6_A2_T7.js
-  re = RegExp "^..^e" --case_sensitive=true --multiline=false
-  m = re.first_matching "ab\ncde"
-  expect_equals null m
+  re = RegExp "^..^e" --case-sensitive=true --multiline=false
+  m = re.first-matching "ab\ncde"
+  expect-equals null m
 
   // S15.10.2.13_A1_T4.js
-  re = RegExp "q[ax-zb](?=\\s+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "tqaqy "
+  re = RegExp "q[ax-zb](?=\\s+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "tqaqy "
   expected = ["qy"]
   check m expected
 
   // S15.10.2.7_A3_T4.js
-  re = RegExp "\\s+java\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "java\n\nobject"
-  expect_equals null m
+  re = RegExp "\\s+java\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "java\n\nobject"
+  expect-equals null m
 
   // S15.10.2.7_A3_T14.js
-  re = RegExp "b*b+" --case_sensitive=true --multiline=false
-  m = re.first_matching "abbbbbbbc"
+  re = RegExp "b*b+" --case-sensitive=true --multiline=false
+  m = re.first-matching "abbbbbbbc"
   expected = ["bbbbbbb"]
   check m expected
 
   // S15.10.2.13_A1_T8.js
-  re = RegExp "[d-h]+" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefghijkl"
+  re = RegExp "[d-h]+" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefghijkl"
   expected = ["defgh"]
   check m expected
 
   // S15.10.2.8_A3_T29.js
-  re = RegExp "^([a-z]+)*[a-z]\$" --case_sensitive=true --multiline=false
+  re = RegExp "^([a-z]+)*[a-z]\$" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.13_A1_T15.js
-  re = RegExp "[\\d][\\n][^\\d]" --case_sensitive=true --multiline=false
-  m = re.first_matching "line1\nline2"
+  re = RegExp "[\\d][\\n][^\\d]" --case-sensitive=true --multiline=false
+  m = re.first-matching "line1\nline2"
   expected = ["1\nl"]
   check m expected
 
   // S15.10.2.13_A1_T2.js
-  re = RegExp "a[]" --case_sensitive=true --multiline=false
-  m = re.first_matching "\x00\x00"
-  expect_equals null m
+  re = RegExp "a[]" --case-sensitive=true --multiline=false
+  m = re.first-matching "\x00\x00"
+  expect-equals null m
 
   // S15.10.2.13_A3_T4.js
-  re = RegExp "[^\\[\\b\\]]+" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdef"
+  re = RegExp "[^\\[\\b\\]]+" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdef"
   expected = ["abcdef"]
   check m expected
 
   // S15.10.2.6_A2_T1.js
-  re = RegExp "^m" --case_sensitive=true --multiline=false
-  m = re.first_matching "pairs\nmakes\tdouble"
-  expect_equals null m
+  re = RegExp "^m" --case-sensitive=true --multiline=false
+  m = re.first-matching "pairs\nmakes\tdouble"
+  expect-equals null m
 
   // S15.10.2.7_A3_T12.js
-  re = RegExp "(b+)(b+)(b+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "abbbbbbbc"
+  re = RegExp "(b+)(b+)(b+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "abbbbbbbc"
   expected = ["bbbbbbb", "bbbbb", "b", "b"]
   check m expected
 
   // S15.10.2.13_A1_T7.js
-  re = RegExp "ab[erst]de" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcde"
-  expect_equals null m
+  re = RegExp "ab[erst]de" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcde"
+  expect-equals null m
 
   // S15.10.2.8_A4_T2.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A1_T11.js
-  re = RegExp "bx{0,93}c" --case_sensitive=true --multiline=false
-  m = re.first_matching "aaabbbbcccddeeeefffff"
+  re = RegExp "bx{0,93}c" --case-sensitive=true --multiline=false
+  m = re.first-matching "aaabbbbcccddeeeefffff"
   expected = ["bc"]
   check m expected
 
   // S15.10.2.7_A6_T2.js
-  re = RegExp "b{8,}c" --case_sensitive=true --multiline=false
-  m = re.first_matching "aaabbbbcccddeeeefffff"
-  expect_equals null m
+  re = RegExp "b{8,}c" --case-sensitive=true --multiline=false
+  m = re.first-matching "aaabbbbcccddeeeefffff"
+  expect-equals null m
 
   // S15.10.2.8_A3_T22.js
-  re = RegExp "^(A)?(A.*)\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "A"
+  re = RegExp "^(A)?(A.*)\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "A"
   expected = ["A", null, "A"]
   check m expected
 
   // S15.10.2.13_A1_T6.js
-  re = RegExp "ab[ercst]de" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcde"
+  re = RegExp "ab[ercst]de" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcde"
   expected = ["abcde"]
   check m expected
 
   // S15.10.2.8_A3_T2.js
-  re = RegExp "([Jj]ava([Ss]cript)?)\\sis\\s(fun\\w*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Developing with Java is fun, try it"
+  re = RegExp "([Jj]ava([Ss]cript)?)\\sis\\s(fun\\w*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Developing with Java is fun, try it"
   expected = ["Java is fun", "Java", null, "fun"]
   check m expected
 
   // S15.10.2.7_A3_T6.js
-  re = RegExp "[a-z]+\\d+" --case_sensitive=true --multiline=false
-  m = re.first_matching "__abc123.0"
+  re = RegExp "[a-z]+\\d+" --case-sensitive=true --multiline=false
+  m = re.first-matching "__abc123.0"
   expected = ["abc123"]
   check m expected
 
   // S15.10.2.7_A4_T2.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching """alice said: "don't""""
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching """alice said: "don't""""
   expected = ["alice said: "]
   check m expected
 
   // S15.10.2.7_A1_T1.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "the answer is 42"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "the answer is 42"
   expected = ["42"]
   check m expected
 
   // S15.10.2.8_A3_T17.js
-  re = RegExp "<body.*>((.*\\n?)*?)</body>" --case_sensitive=false --multiline=false
+  re = RegExp "<body.*>((.*\\n?)*?)</body>" --case-sensitive=false --multiline=false
   // Rejected input (__html);
 
   // S15.10.2.6_A2_T9.js
-  re = RegExp "^\\^+" --case_sensitive=true --multiline=false
-  m = re.first_matching "^^^x"
+  re = RegExp "^\\^+" --case-sensitive=true --multiline=false
+  m = re.first-matching "^^^x"
   expected = ["^^^"]
   check m expected
 
   // S15.10.2.7_A5_T10.js
-  re = RegExp "ab?c?d?x?y?z" --case_sensitive=true --multiline=false
-  m = re.first_matching "123az789"
+  re = RegExp "ab?c?d?x?y?z" --case-sensitive=true --multiline=false
+  m = re.first-matching "123az789"
   expected = ["az"]
   check m expected
 
   // S15.10.2.8_A1_T4.js
-  re = RegExp "[Jj]ava([Ss]cript)?(?=\\:)" --case_sensitive=true --multiline=false
-  m = re.first_matching "taste of java: the cookbook "
+  re = RegExp "[Jj]ava([Ss]cript)?(?=\\:)" --case-sensitive=true --multiline=false
+  m = re.first-matching "taste of java: the cookbook "
   expected = ["java", null]
   check m expected
 
   // S15.10.2.6_A2_T3.js
-  re = RegExp "^p[a-z]" --case_sensitive=true --multiline=false
-  m = re.first_matching "pairs\nmakes\tdouble\npesos"
+  re = RegExp "^p[a-z]" --case-sensitive=true --multiline=false
+  m = re.first-matching "pairs\nmakes\tdouble\npesos"
   expected = ["pa"]
   check m expected
 
   // S15.10.2.7_A5_T1.js
-  re = RegExp "java(script)?" --case_sensitive=true --multiline=false
-  m = re.first_matching "state: javascript is extension of ecma script"
+  re = RegExp "java(script)?" --case-sensitive=true --multiline=false
+  m = re.first-matching "state: javascript is extension of ecma script"
   expected = ["javascript", "script"]
   check m expected
 
   // S15.10.2.5_A1_T5.js
-  re = RegExp "(a*)b\\1+" --case_sensitive=true --multiline=false
-  m = re.first_matching "baaaac"
+  re = RegExp "(a*)b\\1+" --case-sensitive=true --multiline=false
+  m = re.first-matching "baaaac"
   expected = ["b", ""]
   check m expected
 
   // S15.10.2.6_A3_T9.js
-  re = RegExp "r\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
-  expect_equals null m
+  re = RegExp "r\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
+  expect-equals null m
 
   // S15.10.2.6_A3_T10.js
-  re = RegExp "\\brobot\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
+  re = RegExp "\\brobot\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
   expected = ["robot"]
   check m expected
 
   // S15.10.2.8_A2_T2.js
-  re = RegExp "Java(?!Script)([A-Z]\\w*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "using of JavaBeans technology"
+  re = RegExp "Java(?!Script)([A-Z]\\w*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "using of JavaBeans technology"
   expected = ["JavaBeans", "Beans"]
   check m expected
 
   // S15.10.2.8_A2_T11.js
-  re = RegExp "(?!a|b)|c" --case_sensitive=true --multiline=false
-  m = re.first_matching "d"
+  re = RegExp "(?!a|b)|c" --case-sensitive=true --multiline=false
+  m = re.first-matching "d"
   expected = [""]
   check m expected
 
   // S15.10.2.8_A2_T6.js
-  re = RegExp "(\\.(?!com|org)|/)" --case_sensitive=true --multiline=false
-  m = re.first_matching "ah.info"
+  re = RegExp "(\\.(?!com|org)|/)" --case-sensitive=true --multiline=false
+  m = re.first-matching "ah.info"
   expected = [".", "."]
   check m expected
 
   // S15.10.2.13_A1_T10.js
-  re = RegExp "[a-c\\d]+" --case_sensitive=true --multiline=false
-  m = re.first_matching "\n\nabc324234\n"
+  re = RegExp "[a-c\\d]+" --case-sensitive=true --multiline=false
+  m = re.first-matching "\n\nabc324234\n"
   expected = ["abc324234"]
   check m expected
 
   // S15.10.2.6_A4_T7.js
-  re = RegExp "\\B[^z]{4}\\B" --case_sensitive=true --multiline=false
-  m = re.first_matching "devil arise\tforzzx\nevils"
+  re = RegExp "\\B[^z]{4}\\B" --case-sensitive=true --multiline=false
+  m = re.first-matching "devil arise\tforzzx\nevils"
   expected = ["il a"]
   check m expected
 
   // S15.10.2.8_A3_T28.js
-  re = RegExp "(a)?(a)" --case_sensitive=true --multiline=false
+  re = RegExp "(a)?(a)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A1_T5.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "the 1984 novel"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "the 1984 novel"
   expected = ["1984"]
   check m expected
 
   // S15.10.2.6_A3_T4.js
-  re = RegExp "\\bso" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
+  re = RegExp "\\bso" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
   expected = ["so"]
   check m expected
 
   // S15.10.2.6_A3_T8.js
-  re = RegExp "\\bro" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
+  re = RegExp "\\bro" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
   expected = ["ro"]
   check m expected
 
   // S15.10.2.8_A3_T5.js
-  re = RegExp "a(bc)d(ef)g" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefg"
+  re = RegExp "a(bc)d(ef)g" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefg"
   expected = ["abcdefg", "bc", "ef"]
   check m expected
 
   // S15.10.2.6_A3_T1.js
-  re = RegExp "\\bp" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
+  re = RegExp "\\bp" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
   expected = ["p"]
   check m expected
 
   // S15.10.2.13_A1_T5.js
-  re = RegExp "q[ax-zb](?=\\s+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "tqa\t  qy "
+  re = RegExp "q[ax-zb](?=\\s+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "tqa\t  qy "
   expected = ["qa"]
   check m expected
 
   // S15.10.2.7_A3_T1.js
-  re = RegExp "\\s+java\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "language  java\n"
+  re = RegExp "\\s+java\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "language  java\n"
   expected = ["  java\n"]
   check m expected
 
   // S15.10.2.7_A2_T4.js
-  re = RegExp "b{8}" --case_sensitive=true --multiline=false
-  m = re.first_matching "aaabbbbcccddeeeefffff"
-  expect_equals null m
+  re = RegExp "b{8}" --case-sensitive=true --multiline=false
+  m = re.first-matching "aaabbbbcccddeeeefffff"
+  expect-equals null m
 
   // S15.10.2.7_A1_T3.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "the 20000 Leagues Under the Sea book"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "the 20000 Leagues Under the Sea book"
   expected = ["2000"]
   check m expected
 
   // S15.10.2.3_A1_T11.js
-  re = RegExp "11111|111" --case_sensitive=true --multiline=false
-  m = re.first_matching "1111111111111111"
+  re = RegExp "11111|111" --case-sensitive=true --multiline=false
+  m = re.first-matching "1111111111111111"
   expected = ["11111"]
   check m expected
 
   // S15.10.2.8_A3_T9.js
-  re = RegExp "(.{2}).+\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "aabcdaabcd"
+  re = RegExp "(.{2}).+\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "aabcdaabcd"
   expected = ["aabcdaa", "aa"]
   check m expected
 
   // S15.10.2.13_A1_T13.js
-  re = RegExp "[a-z][^1-9][a-z]" --case_sensitive=true --multiline=false
-  m = re.first_matching "a1b  b2c  c3d  def  f4g"
+  re = RegExp "[a-z][^1-9][a-z]" --case-sensitive=true --multiline=false
+  m = re.first-matching "a1b  b2c  c3d  def  f4g"
   expected = ["def"]
   check m expected
 
   // S15.10.2.7_A5_T11.js
-  re = RegExp "\\??\\??\\??\\??\\??" --case_sensitive=true --multiline=false
-  m = re.first_matching "?????"
+  re = RegExp "\\??\\??\\??\\??\\??" --case-sensitive=true --multiline=false
+  m = re.first-matching "?????"
   expected = ["?????"]
   check m expected
 
   // S15.10.2.3_A1_T4.js
-  re = RegExp "\\d{3}|[a-z]{4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "2, 12 and 234 AND of course repeat 12"
+  re = RegExp "\\d{3}|[a-z]{4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "2, 12 and 234 AND of course repeat 12"
   expected = ["234"]
   check m expected
 
@@ -388,424 +388,424 @@ main:
   // Rejected for using /g flag: var __executed = /[a-z]+/ig.exec(__string);
 
   // S15.10.2.8_A3_T1.js
-  re = RegExp "([Jj]ava([Ss]cript)?)\\sis\\s(fun\\w*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Learning javaScript is funny, really"
+  re = RegExp "([Jj]ava([Ss]cript)?)\\sis\\s(fun\\w*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Learning javaScript is funny, really"
   expected = ["javaScript is funny", "javaScript", "Script", "funny"]
   check m expected
 
   // S15.10.2.7_A5_T7.js
-  re = RegExp "x?y?z?" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcd"
+  re = RegExp "x?y?z?" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcd"
   expected = [""]
   check m expected
 
   // S15.10.2.7_A1_T10.js
-  re = RegExp "b{0,93}c" --case_sensitive=true --multiline=false
-  m = re.first_matching "aaabbbbcccddeeeefffff"
+  re = RegExp "b{0,93}c" --case-sensitive=true --multiline=false
+  m = re.first-matching "aaabbbbcccddeeeefffff"
   expected = ["bbbbc"]
   check m expected
 
   // S15.10.2.6_A2_T5.js
-  re = RegExp "^[^p]" --case_sensitive=true --multiline=true
-  m = re.first_matching "pairs\nmakes\tdouble\npesos"
+  re = RegExp "^[^p]" --case-sensitive=true --multiline=true
+  m = re.first-matching "pairs\nmakes\tdouble\npesos"
   expected = ["m"]
   check m expected
 
   // S15.10.2.8_A4_T4.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A3_T14.js
-  re = RegExp "a(.?)b\\1c\\1d\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcd"
+  re = RegExp "a(.?)b\\1c\\1d\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcd"
   expected = ["abcd", ""]
   check m expected
 
   // S15.10.2.8_A4_T6.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A4_T4.js
-  re = RegExp "\\B\\w\\B" --case_sensitive=true --multiline=false
-  m = re.first_matching "devils arise\tfor\nrevil"
+  re = RegExp "\\B\\w\\B" --case-sensitive=true --multiline=false
+  m = re.first-matching "devils arise\tfor\nrevil"
   expected = ["e"]
   check m expected
 
   // S15.10.2.13_A2_T5.js
-  re = RegExp "a[^1-9]c" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
+  re = RegExp "a[^1-9]c" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
   expected = ["abc"]
   check m expected
 
   // S15.10.2.7_A4_T9.js
-  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
-  m = re.first_matching """alice cries out:"""""
+  re = RegExp """["'][^"']*["']""" --case-sensitive=true --multiline=false
+  m = re.first-matching """alice cries out:"""""
   expected = [""""""""]
   check m expected
 
   // S15.10.2.7_A5_T6.js
-  re = RegExp "o?pqrst" --case_sensitive=true --multiline=false
-  m = re.first_matching "pqrstuvw"
+  re = RegExp "o?pqrst" --case-sensitive=true --multiline=false
+  m = re.first-matching "pqrstuvw"
   expected = ["pqrst"]
   check m expected
 
   // S15.10.2.7_A5_T9.js
-  re = RegExp "b?b?b?b" --case_sensitive=true --multiline=false
-  m = re.first_matching "abbbbc"
+  re = RegExp "b?b?b?b" --case-sensitive=true --multiline=false
+  m = re.first-matching "abbbbc"
   expected = ["bbbb"]
   check m expected
 
   // S15.10.2.7_A1_T7.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "0a01122b"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "0a01122b"
   expected = ["0112"]
   check m expected
 
   // S15.10.2.13_A2_T2.js
-  re = RegExp "a[^]" --case_sensitive=true --multiline=false
-  m = re.first_matching "   a\t\n"
+  re = RegExp "a[^]" --case-sensitive=true --multiline=false
+  m = re.first-matching "   a\t\n"
   expected = ["a\t"]
   check m expected
 
   // S15.10.2.7_A4_T10.js
-  re = RegExp "d*" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcddddefg"
+  re = RegExp "d*" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcddddefg"
   expected = [""]
   check m expected
 
   // S15.10.2.7_A3_T5.js
-  re = RegExp "[a-z]+\\d+" --case_sensitive=true --multiline=false
-  m = re.first_matching "x 2 ff 55 x2 as1 z12 abc12.0"
+  re = RegExp "[a-z]+\\d+" --case-sensitive=true --multiline=false
+  m = re.first-matching "x 2 ff 55 x2 as1 z12 abc12.0"
   expected = ["x2"]
   check m expected
 
   // S15.10.2.6_A1_T2.js
-  re = RegExp "e\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "pairs\nmakes\tdouble"
+  re = RegExp "e\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "pairs\nmakes\tdouble"
   expected = ["e"]
   check m expected
 
   // S15.10.2.8_A1_T3.js
-  re = RegExp "[Jj]ava([Ss]cript)?(?=\\:)" --case_sensitive=true --multiline=false
-  m = re.first_matching "just Javascript: the way af jedi"
+  re = RegExp "[Jj]ava([Ss]cript)?(?=\\:)" --case-sensitive=true --multiline=false
+  m = re.first-matching "just Javascript: the way af jedi"
   expected = ["Javascript", "script"]
   check m expected
 
   // S15.10.2.8_A3_T10.js
-  re = RegExp "(\\d{3})(\\d{3})\\1\\2" --case_sensitive=true --multiline=false
-  m = re.first_matching "123456123456"
+  re = RegExp "(\\d{3})(\\d{3})\\1\\2" --case-sensitive=true --multiline=false
+  m = re.first-matching "123456123456"
   expected = ["123456123456", "123", "456"]
   check m expected
 
   // S15.10.2.7_A1_T9.js
-  re = RegExp "b{42,93}c" --case_sensitive=true --multiline=false
-  m = re.first_matching "aaabbbbcccddeeeefffff"
-  expect_equals null m
+  re = RegExp "b{42,93}c" --case-sensitive=true --multiline=false
+  m = re.first-matching "aaabbbbcccddeeeefffff"
+  expect-equals null m
 
   // S15.10.2.7_A3_T10.js
-  re = RegExp "o+" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefg"
-  expect_equals null m
+  re = RegExp "o+" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefg"
+  expect-equals null m
 
   // S15.10.2.7_A6_T6.js
-  re = RegExp "x{1,2}x{1,}" --case_sensitive=true --multiline=false
-  m = re.first_matching "xxxxxxx"
+  re = RegExp "x{1,2}x{1,}" --case-sensitive=true --multiline=false
+  m = re.first-matching "xxxxxxx"
   expected = ["xxxxxxx"]
   check m expected
 
   // S15.10.2.13_A3_T3.js
-  re = RegExp "[^\\[\\b\\]]+" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc\x08def"
+  re = RegExp "[^\\[\\b\\]]+" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc\x08def"
   expected = ["abc"]
   check m expected
 
   // S15.10.2.6_A6_T3.js
-  re = RegExp "^.*?(:|\$)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Hello: World"
+  re = RegExp "^.*?(:|\$)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Hello: World"
   expected = ["Hello:", ":"]
   check m expected
 
   // S15.10.2.9_A1_T2.js
-  re = RegExp "([xu]\\d{2}([A-H]{2})?)\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "x09x12x01x01u00FFu00FFx04x04x23"
+  re = RegExp "([xu]\\d{2}([A-H]{2})?)\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "x09x12x01x01u00FFu00FFx04x04x23"
   expected = ["x01x01", "x01", null]
   check m expected
 
   // S15.10.2.7_A6_T3.js
-  re = RegExp "\\d{1,}" --case_sensitive=true --multiline=false
-  m = re.first_matching "wqe456646dsff"
+  re = RegExp "\\d{1,}" --case-sensitive=true --multiline=false
+  m = re.first-matching "wqe456646dsff"
   expected = ["456646"]
   check m expected
 
   // S15.10.2.8_A3_T26.js
-  re = RegExp "(a)?a" --case_sensitive=true --multiline=false
+  re = RegExp "(a)?a" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A4_T1.js
-  re = RegExp "\\Bevil\\B" --case_sensitive=true --multiline=false
-  m = re.first_matching "devils arise\tfor\nevil"
+  re = RegExp "\\Bevil\\B" --case-sensitive=true --multiline=false
+  m = re.first-matching "devils arise\tfor\nevil"
   expected = ["evil"]
   check m expected
 
   // S15.10.2.6_A6_T1.js
-  re = RegExp "^.*?\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "Hello World"
+  re = RegExp "^.*?\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "Hello World"
   expected = ["Hello World"]
   check m expected
 
   // S15.10.2.7_A5_T4.js
-  re = RegExp "cd?e" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdef"
+  re = RegExp "cd?e" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdef"
   expected = ["cde"]
   check m expected
 
   // S15.10.2.8_A3_T12.js
-  re = RegExp "(a(b(c)))(d(e(f)))" --case_sensitive=true --multiline=false
-  m = re.first_matching "xabcdefg"
+  re = RegExp "(a(b(c)))(d(e(f)))" --case-sensitive=true --multiline=false
+  m = re.first-matching "xabcdefg"
   expected = ["abcdef", "abc", "bc", "c", "def", "ef", "f"]
   check m expected
 
   // S15.10.2.3_A1_T16.js
-  re = RegExp "()|" --case_sensitive=true --multiline=false
-  m = re.first_matching ""
+  re = RegExp "()|" --case-sensitive=true --multiline=false
+  m = re.first-matching ""
   expected = ["", ""]
   check m expected
 
   // S15.10.2.7_A1_T6.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "0a011b"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "0a011b"
   expected = ["011"]
   check m expected
 
   // S15.10.2.7_A3_T2.js
-  re = RegExp "\\s+java\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "\t java object"
+  re = RegExp "\\s+java\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "\t java object"
   expected = ["\t java "]
   check m expected
 
   // S15.10.2.13_A1_T17.js
-  re = RegExp "[]" --case_sensitive=true --multiline=false
-  m = re.first_matching "a[b\n[]\tc]d"
+  re = RegExp "[]" --case-sensitive=true --multiline=false
+  m = re.first-matching "a[b\n[]\tc]d"
 
   // S15.10.2.3_A1_T12.js
-  re = RegExp "xyz|..." --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
+  re = RegExp "xyz|..." --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
   expected = ["abc"]
   check m expected
 
   // S15.10.2.7_A4_T20.js
-  re = RegExp ".*" --case_sensitive=true --multiline=false
-  m = re.first_matching "a1b2c3"
+  re = RegExp ".*" --case-sensitive=true --multiline=false
+  m = re.first-matching "a1b2c3"
   expected = ["a1b2c3"]
   check m expected
 
   // S15.10.2.7_A4_T12.js
-  re = RegExp "cx*d" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefg"
+  re = RegExp "cx*d" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefg"
   expected = ["cd"]
   check m expected
 
   // S15.10.2.8_A3_T21.js
-  re = RegExp "^(A)?(A.*)\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "AA"
+  re = RegExp "^(A)?(A.*)\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "AA"
   expected = ["AA", "A", "A"]
   check m expected
 
   // S15.10.2.8_A3_T27.js
-  re = RegExp "a|(b)" --case_sensitive=true --multiline=false
+  re = RegExp "a|(b)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A3_T8.js
-  re = RegExp "(aa).+\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "aabcdaabcd"
+  re = RegExp "(aa).+\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "aabcdaabcd"
   expected = ["aabcdaa", "aa"]
   check m expected
 
   // S15.10.2.7_A5_T2.js
-  re = RegExp "java(script)?" --case_sensitive=true --multiline=false
-  m = re.first_matching "state: java and javascript are vastly different"
+  re = RegExp "java(script)?" --case-sensitive=true --multiline=false
+  m = re.first-matching "state: java and javascript are vastly different"
   expected = ["java", null]
   check m expected
 
   // S15.10.2.6_A3_T12.js
-  re = RegExp "\\bop" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
+  re = RegExp "\\bop" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
   expected = ["op"]
   check m expected
 
   // S15.10.2.3_A1_T2.js
-  re = RegExp "((a)|(ab))((c)|(bc))" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
+  re = RegExp "((a)|(ab))((c)|(bc))" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
   expected = ["abc", "a", "a", null, "bc", null, "bc"]
   check m expected
 
   // S15.10.2.6_A6_T2.js
-  re = RegExp "^.*?" --case_sensitive=true --multiline=false
-  m = re.first_matching "Hello World"
+  re = RegExp "^.*?" --case-sensitive=true --multiline=false
+  m = re.first-matching "Hello World"
   expected = [""]
   check m expected
 
   // S15.10.2.3_A1_T17.js
-  re = RegExp "|()" --case_sensitive=true --multiline=false
-  m = re.first_matching ""
+  re = RegExp "|()" --case-sensitive=true --multiline=false
+  m = re.first-matching ""
   expected = ["", null]
   check m expected
 
   // S15.10.2.3_A1_T8.js
-  re = RegExp "(?:ab|cd)+|ef" --case_sensitive=false --multiline=false
-  m = re.first_matching "AEKFCD"
+  re = RegExp "(?:ab|cd)+|ef" --case-sensitive=false --multiline=false
+  m = re.first-matching "AEKFCD"
   expected = ["CD"]
   check m expected
 
   // S15.10.2.13_A1_T1.js
-  re = RegExp "[]a" --case_sensitive=true --multiline=false
-  m = re.first_matching "\x00\x00"
-  expect_equals null m
+  re = RegExp "[]a" --case-sensitive=true --multiline=false
+  m = re.first-matching "\x00\x00"
+  expect-equals null m
 
   // S15.10.2.3_A1_T1.js
-  re = RegExp "a|ab" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
+  re = RegExp "a|ab" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
   expected = ["a"]
   check m expected
 
   // S15.10.2.8_A3_T32.js
-  re = RegExp "^(([a-z]+)*[a-z]\\.)+[a-z]{2,}\$" --case_sensitive=true --multiline=false
+  re = RegExp "^(([a-z]+)*[a-z]\\.)+[a-z]{2,}\$" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A4_T18.js
-  re = RegExp "[\\d]*[\\s]*bc." --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdef"
+  re = RegExp "[\\d]*[\\s]*bc." --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdef"
   expected = ["bcd"]
   check m expected
 
   // S15.10.2.3_A1_T7.js
-  re = RegExp "ab|cd|ef" --case_sensitive=true --multiline=false
-  m = re.first_matching "AEKFCD"
-  expect_equals null m
+  re = RegExp "ab|cd|ef" --case-sensitive=true --multiline=false
+  m = re.first-matching "AEKFCD"
+  expect-equals null m
 
   // S15.10.2.6_A4_T8.js
-  re = RegExp "\\B\\w{4}\\B" --case_sensitive=true --multiline=false
-  m = re.first_matching "devil arise\tforzzx\nevils"
+  re = RegExp "\\B\\w{4}\\B" --case-sensitive=true --multiline=false
+  m = re.first-matching "devil arise\tforzzx\nevils"
   expected = ["orzz"]
   check m expected
 
   // S15.10.2.7_A4_T16.js
-  re = RegExp "(x+)(x*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "xxxxxxx"
+  re = RegExp "(x+)(x*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "xxxxxxx"
   expected = ["xxxxxxx", "xxxxxxx", ""]
   check m expected
 
   // S15.10.2.7_A1_T2.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "the 7 movie"
-  expect_equals null m
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "the 7 movie"
+  expect-equals null m
 
   // S15.10.2.7_A3_T11.js
-  re = RegExp "d+" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefg"
+  re = RegExp "d+" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefg"
   expected = ["d"]
   check m expected
 
   // S15.10.2.7_A2_T3.js
-  re = RegExp "b{2}c" --case_sensitive=true --multiline=false
-  m = re.first_matching "aaabbbbcccddeeeefffff"
+  re = RegExp "b{2}c" --case-sensitive=true --multiline=false
+  m = re.first-matching "aaabbbbcccddeeeefffff"
   expected = ["bbc"]
   check m expected
 
   // S15.10.2.3_A1_T3.js
-  re = RegExp "\\d{3}|[a-z]{4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "2, 12 and of course repeat 12"
+  re = RegExp "\\d{3}|[a-z]{4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "2, 12 and of course repeat 12"
   expected = ["cour"]
   check m expected
 
   // S15.10.2.7_A4_T4.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching """alice "sweep": "don't""""
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching """alice "sweep": "don't""""
   expected = ["alice "]
   check m expected
 
   // S15.10.2.9_A1_T3.js
-  re = RegExp "([xu]\\d{2}([A-H]{2})?)\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "x09x12x01x05u00FFu00FFx04x04x23"
+  re = RegExp "([xu]\\d{2}([A-H]{2})?)\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "x09x12x01x05u00FFu00FFx04x04x23"
   expected = ["u00FFu00FF", "u00FF", "FF"]
   check m expected
 
   // S15.10.2.8_A3_T4.js
-  re = RegExp "(abc)" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
+  re = RegExp "(abc)" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
   expected = ["abc", "abc"]
   check m expected
 
   // S15.10.2.6_A2_T4.js
-  re = RegExp "^p[b-z]" --case_sensitive=true --multiline=true
-  m = re.first_matching "pairs\nmakes\tdouble\npesos"
+  re = RegExp "^p[b-z]" --case-sensitive=true --multiline=true
+  m = re.first-matching "pairs\nmakes\tdouble\npesos"
   expected = ["pe"]
   check m expected
 
   // S15.10.2.8_A3_T23.js
-  re = RegExp "(A)?(A.*)" --case_sensitive=true --multiline=false
+  re = RegExp "(A)?(A.*)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A2_T2.js
-  re = RegExp "^m" --case_sensitive=true --multiline=true
-  m = re.first_matching "pairs\nmakes\tdouble"
+  re = RegExp "^m" --case-sensitive=true --multiline=true
+  m = re.first-matching "pairs\nmakes\tdouble"
   expected = ["m"]
   check m expected
 
   // S15.10.2.3_A1_T15.js
-  re = RegExp "(Rob)|(Bob)|(Robert)|(Bobby)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Hi Bob"
+  re = RegExp "(Rob)|(Bob)|(Robert)|(Bobby)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Hi Bob"
   expected = ["Bob", null, "Bob", null, null]
   check m expected
 
   // S15.10.2.6_A6_T4.js
-  re = RegExp "^.*(:|\$)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Hello: World"
+  re = RegExp "^.*(:|\$)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Hello: World"
   expected = ["Hello: World", ""]
   check m expected
 
   // S15.10.2.7_A1_T12.js
-  re = RegExp ".{0,93}" --case_sensitive=true --multiline=false
-  m = re.first_matching "weirwerdf"
+  re = RegExp ".{0,93}" --case-sensitive=true --multiline=false
+  m = re.first-matching "weirwerdf"
   expected = ["weirwerdf"]
   check m expected
 
   // S15.10.2.13_A1_T9.js
-  re = RegExp "[1234567].{2}" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc6defghijkl"
+  re = RegExp "[1234567].{2}" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc6defghijkl"
   expected = ["6de"]
   check m expected
 
   // S15.10.2.9_A1_T1.js
-  re = RegExp "\\b(\\w+) \\1\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "do you listen the the band"
+  re = RegExp "\\b(\\w+) \\1\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "do you listen the the band"
   expected = ["the the", "the"]
   check m expected
 
   // S15.10.2.8_A3_T24.js
-  re = RegExp "(A)?(A.*)" --case_sensitive=true --multiline=false
+  re = RegExp "(A)?(A.*)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A4_T5.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching """alice "sweep": "don't""""
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching """alice "sweep": "don't""""
   expected = ["alice "]
   check m expected
 
   // S15.10.2.5_A1_T2.js
-  re = RegExp "a[a-z]{2,4}?" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefghi"
+  re = RegExp "a[a-z]{2,4}?" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefghi"
   expected = ["abc"]
   check m expected
 
   // S15.10.2.7_A4_T21.js
-  re = RegExp "[xyz]*1" --case_sensitive=true --multiline=false
-  m = re.first_matching "a0.b2.c3"
-  expect_equals null m
+  re = RegExp "[xyz]*1" --case-sensitive=true --multiline=false
+  m = re.first-matching "a0.b2.c3"
+  expect-equals null m
 
   // S15.10.2.13_A1_T3.js
-  re = RegExp "q[ax-zb](?=\\s+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "qYqy "
+  re = RegExp "q[ax-zb](?=\\s+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "qYqy "
   expected = ["qy"]
   check m expected
 
@@ -813,318 +813,318 @@ main:
   // Rejected for not using literal regexp: var __executed = __re.exec(__strOriginal);
 
   // S15.10.2.7_A4_T7.js
-  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
-  m = re.first_matching "alice cries out: 'don't'"
+  re = RegExp """["'][^"']*["']""" --case-sensitive=true --multiline=false
+  m = re.first-matching "alice cries out: 'don't'"
   expected = ["'don'"]
   check m expected
 
   // S15.10.2.3_A1_T13.js
-  re = RegExp "(.)..|abc" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
+  re = RegExp "(.)..|abc" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
   expected = ["abc", "a"]
   check m expected
 
   // S15.10.2.8_A2_T9.js
-  re = RegExp "(?!a|b)|c" --case_sensitive=true --multiline=false
-  m = re.first_matching ""
+  re = RegExp "(?!a|b)|c" --case-sensitive=true --multiline=false
+  m = re.first-matching ""
   expected = [""]
   check m expected
 
   // S15.10.2.6_A1_T3.js
-  re = RegExp "s\$" --case_sensitive=true --multiline=true
-  m = re.first_matching "pairs\nmakes\tdouble"
+  re = RegExp "s\$" --case-sensitive=true --multiline=true
+  m = re.first-matching "pairs\nmakes\tdouble"
   expected = ["s"]
   check m expected
 
   // S15.10.2.8_A3_T13.js
-  re = RegExp "(a(b(c)))(d(e(f)))\\2\\5" --case_sensitive=true --multiline=false
-  m = re.first_matching "xabcdefbcefg"
+  re = RegExp "(a(b(c)))(d(e(f)))\\2\\5" --case-sensitive=true --multiline=false
+  m = re.first-matching "xabcdefbcefg"
   expected = ["abcdefbcef", "abc", "bc", "c", "def", "ef", "f"]
   check m expected
 
   // S15.10.2.7_A6_T4.js
-  re = RegExp "(123){1,}" --case_sensitive=true --multiline=false
-  m = re.first_matching "123123"
+  re = RegExp "(123){1,}" --case-sensitive=true --multiline=false
+  m = re.first-matching "123123"
   expected = ["123123", "123"]
   check m expected
 
   // S15.10.2.6_A3_T13.js
-  re = RegExp "op\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
-  expect_equals null m
+  re = RegExp "op\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
+  expect-equals null m
 
   // S15.10.2.7_A4_T19.js
-  re = RegExp "bc..[\\d]*[\\s]*" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdef"
+  re = RegExp "bc..[\\d]*[\\s]*" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdef"
   expected = ["bcde"]
   check m expected
 
   // S15.10.2.13_A2_T6.js
-  re = RegExp "a[^b]c" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
-  expect_equals null m
+  re = RegExp "a[^b]c" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
+  expect-equals null m
 
   // S15.10.2.8_A2_T5.js
-  re = RegExp "Java(?!Script)([A-Z]\\w*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "JavaScr oops ipt "
+  re = RegExp "Java(?!Script)([A-Z]\\w*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "JavaScr oops ipt "
   expected = ["JavaScr", "Scr"]
   check m expected
 
   // S15.10.2.7_A4_T8.js
-  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
-  m = re.first_matching "alice cries out: don't"
-  expect_equals null m
+  re = RegExp """["'][^"']*["']""" --case-sensitive=true --multiline=false
+  m = re.first-matching "alice cries out: don't"
+  expect-equals null m
 
   // S15.10.2.6_A1_T5.js
   // Rejected for using /g flag: var __executed = /es$/mg.exec("pairs\nmakes\tdoubl\u0065s");
 
   // S15.10.2.8_A3_T31.js
-  re = RegExp "^([a-z]+)*[a-z]\$" --case_sensitive=true --multiline=false
+  re = RegExp "^([a-z]+)*[a-z]\$" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A2_T8.js
-  re = RegExp "(\\.(?!com|org)|/)" --case_sensitive=true --multiline=false
-  m = re.first_matching "ah.com"
-  expect_equals null m
+  re = RegExp "(\\.(?!com|org)|/)" --case-sensitive=true --multiline=false
+  m = re.first-matching "ah.com"
+  expect-equals null m
 
   // S15.10.2.8_A3_T3.js
-  re = RegExp "([Jj]ava([Ss]cript)?)\\sis\\s(fun\\w*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "Developing with JavaScript is dangerous, do not try it without assistance"
-  expect_equals null m
+  re = RegExp "([Jj]ava([Ss]cript)?)\\sis\\s(fun\\w*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "Developing with JavaScript is dangerous, do not try it without assistance"
+  expect-equals null m
 
   // S15.10.2.8_A3_T30.js
-  re = RegExp "^([a-z]+)*[a-z]\$" --case_sensitive=true --multiline=false
+  re = RegExp "^([a-z]+)*[a-z]\$" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A5_T2.js
-  re = RegExp "\\B\\B\\B\\B\\B\\Bbot\\b\\b\\b\\b\\b\\b\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "robot wall-e"
+  re = RegExp "\\B\\B\\B\\B\\B\\Bbot\\b\\b\\b\\b\\b\\b\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "robot wall-e"
   expected = ["bot"]
   check m expected
 
   // S15.10.2.8_A3_T7.js
-  re = RegExp "(aa)bcd\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "aabcdaabcd"
+  re = RegExp "(aa)bcd\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "aabcdaabcd"
   expected = ["aabcdaa", "aa"]
   check m expected
 
   // S15.10.2.8_A3_T6.js
-  re = RegExp "(.{3})(.{4})" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefgh"
+  re = RegExp "(.{3})(.{4})" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefgh"
   expected = ["abcdefg", "abc", "defg"]
   check m expected
 
   // S15.10.2.8_A4_T5.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.6_A2_T10.js
-  re = RegExp "^\\d+" --case_sensitive=true --multiline=true
-  m = re.first_matching "abc\n123xyz"
+  re = RegExp "^\\d+" --case-sensitive=true --multiline=true
+  m = re.first-matching "abc\n123xyz"
   expected = ["123"]
   check m expected
 
   // S15.10.2.13_A2_T7.js
-  re = RegExp "[^a-z]{4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc#\$%def%&*@ghi"
+  re = RegExp "[^a-z]{4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc#\$%def%&*@ghi"
   expected = ["%&*@"]
   check m expected
 
   // S15.10.2.7_A4_T1.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching """"beast"-nickname"""
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching """"beast"-nickname"""
   expected = [""]
   check m expected
 
   // S15.10.2.8_A1_T5.js
-  re = RegExp "[Jj]ava([Ss]cript)?(?=\\:)" --case_sensitive=true --multiline=false
-  m = re.first_matching "rhino is JavaScript engine"
-  expect_equals null m
+  re = RegExp "[Jj]ava([Ss]cript)?(?=\\:)" --case-sensitive=true --multiline=false
+  m = re.first-matching "rhino is JavaScript engine"
+  expect-equals null m
 
   // S15.10.2.13_A1_T11.js
-  re = RegExp "ab[.]?c" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
+  re = RegExp "ab[.]?c" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
   expected = ["abc"]
   check m expected
 
   // S15.10.2.7_A1_T8.js
-  re = RegExp "b{2,3}c" --case_sensitive=true --multiline=false
-  m = re.first_matching "aaabbbbcccddeeeefffff"
+  re = RegExp "b{2,3}c" --case-sensitive=true --multiline=false
+  m = re.first-matching "aaabbbbcccddeeeefffff"
   expected = ["bbbc"]
   check m expected
 
   // S15.10.2.7_A5_T8.js
-  re = RegExp "x?ay?bz?c" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcd"
+  re = RegExp "x?ay?bz?c" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcd"
   expected = ["abc"]
   check m expected
 
   // S15.10.2.6_A3_T5.js
-  re = RegExp "so\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
-  expect_equals null m
+  re = RegExp "so\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
+  expect-equals null m
 
   // S15.10.2.8_A4_T1.js
-  re = RegExp "ab.de" --case_sensitive=true --multiline=false
+  re = RegExp "ab.de" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A4_T15.js
-  re = RegExp "(\\d*)\\d(\\d+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "1234567890"
+  re = RegExp "(\\d*)\\d(\\d+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "1234567890"
   expected = ["1234567890", "12345678", "0"]
   check m expected
 
   // S15.10.2.3_A1_T6.js
-  re = RegExp "ab|cd|ef" --case_sensitive=false --multiline=false
-  m = re.first_matching "AEKFCD"
+  re = RegExp "ab|cd|ef" --case-sensitive=false --multiline=false
+  m = re.first-matching "AEKFCD"
   expected = ["CD"]
   check m expected
 
   // S15.10.2.6_A3_T2.js
-  re = RegExp "ot\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
+  re = RegExp "ot\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
   expected = ["ot"]
   check m expected
 
   // S15.10.2.7_A1_T4.js
-  re = RegExp "\\d{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "the Fahrenheit 451 book"
+  re = RegExp "\\d{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "the Fahrenheit 451 book"
   expected = ["451"]
   check m expected
 
   // S15.10.2.13_A3_T2.js
-  re = RegExp "c[\\b]{3}d" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc\x08\x08\x08def"
+  re = RegExp "c[\\b]{3}d" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc\x08\x08\x08def"
   expected = ["c\x08\x08\x08d"]
   check m expected
 
   // S15.10.2.13_A2_T3.js
-  re = RegExp "a[^b-z]\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "ab an az aY n"
+  re = RegExp "a[^b-z]\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "ab an az aY n"
   expected = ["aY "]
   check m expected
 
   // S15.10.2.8_A4_T3.js
-  re = RegExp ".*a.*" --case_sensitive=true --multiline=false
+  re = RegExp ".*a.*" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A3_T8.js
-  re = RegExp "[a-z]+(\\d+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "__abc123.0"
+  re = RegExp "[a-z]+(\\d+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "__abc123.0"
   expected = ["abc123", "123"]
   check m expected
 
   // S15.10.2.8_A3_T19.js
-  re = RegExp "([\\S]+([ \\t]+[\\S]+)*)[ \\t]*=[ \\t]*[\\S]+" --case_sensitive=true --multiline=false
-  m = re.first_matching "Course_Creator = Test"
+  re = RegExp "([\\S]+([ \\t]+[\\S]+)*)[ \\t]*=[ \\t]*[\\S]+" --case-sensitive=true --multiline=false
+  m = re.first-matching "Course_Creator = Test"
   expected = ["Course_Creator = Test", "Course_Creator", null]
   check m expected
 
   // S15.10.2.5_A1_T1.js
-  re = RegExp "a[a-z]{2,4}" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefghi"
+  re = RegExp "a[a-z]{2,4}" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefghi"
   expected = ["abcde"]
   check m expected
 
   // S15.10.2.7_A3_T7.js
-  re = RegExp "[a-z]+(\\d+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "x 2 ff 55 x2 as1 z12 abc12.0"
+  re = RegExp "[a-z]+(\\d+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "x 2 ff 55 x2 as1 z12 abc12.0"
   expected = ["x2", "2"]
   check m expected
 
   // S15.10.2.8_A5_T2.js
-  re = RegExp "[a-z]+" --case_sensitive=true --multiline=false
+  re = RegExp "[a-z]+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.5_A1_T4.js
-  re = RegExp "(z)((a+)?(b+)?(c))*" --case_sensitive=true --multiline=false
-  m = re.first_matching "zaacbbbcac"
+  re = RegExp "(z)((a+)?(b+)?(c))*" --case-sensitive=true --multiline=false
+  m = re.first-matching "zaacbbbcac"
   expected = ["zaacbbbcac", "z", "ac", "a", null, "c"]
   check m expected
 
   // S15.10.2.7_A3_T13.js
-  re = RegExp "(b+)(b*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "abbbbbbbc"
+  re = RegExp "(b+)(b*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "abbbbbbbc"
   expected = ["bbbbbbb", "bbbbbbb", ""]
   check m expected
 
   // S15.10.2.7_A4_T6.js
-  re = RegExp """["'][^"']*["']""" --case_sensitive=true --multiline=false
-  m = re.first_matching """alice "sweep": "don't""""
+  re = RegExp """["'][^"']*["']""" --case-sensitive=true --multiline=false
+  m = re.first-matching """alice "sweep": "don't""""
   expected = [""""sweep""""]
   check m expected
 
   // S15.10.2.7_A3_T3.js
-  re = RegExp "\\s+java\\s+" --case_sensitive=true --multiline=false
-  m = re.first_matching "\t javax package"
-  expect_equals null m
+  re = RegExp "\\s+java\\s+" --case-sensitive=true --multiline=false
+  m = re.first-matching "\t javax package"
+  expect-equals null m
 
   // S15.10.2.13_A3_T1.js
-  re = RegExp ".[\\b]." --case_sensitive=true --multiline=false
-  m = re.first_matching "abc\x08def"
+  re = RegExp ".[\\b]." --case-sensitive=true --multiline=false
+  m = re.first-matching "abc\x08def"
   expected = ["c\x08d"]
   check m expected
 
   // S15.10.2.13_A1_T14.js
-  re = RegExp "[*&\$]{3}" --case_sensitive=true --multiline=false
-  m = re.first_matching "123*&\$abc"
+  re = RegExp "[*&\$]{3}" --case-sensitive=true --multiline=false
+  m = re.first-matching "123*&\$abc"
   expected = ["*&\$"]
   check m expected
 
   // S15.10.2.8_A2_T4.js
-  re = RegExp "Java(?!Script)([A-Z]\\w*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "i'm a JavaScripter "
-  expect_equals null m
+  re = RegExp "Java(?!Script)([A-Z]\\w*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "i'm a JavaScripter "
+  expect-equals null m
 
   // S15.10.2.7_A5_T5.js
-  re = RegExp "cdx?e" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdef"
+  re = RegExp "cdx?e" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdef"
   expected = ["cde"]
   check m expected
 
   // S15.10.2.6_A2_T8.js
-  re = RegExp "^xxx" --case_sensitive=true --multiline=false
-  m = re.first_matching "yyyyy"
-  expect_equals null m
+  re = RegExp "^xxx" --case-sensitive=true --multiline=false
+  m = re.first-matching "yyyyy"
+  expect-equals null m
 
   // S15.10.2.6_A3_T3.js
-  re = RegExp "\\bot" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
-  expect_equals null m
+  re = RegExp "\\bot" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
+  expect-equals null m
 
   // S15.10.2.6_A3_T7.js
-  re = RegExp "[^o]t\\b" --case_sensitive=false --multiline=false
-  m = re.first_matching "pilOt\nsoviet robot\topenoffice"
+  re = RegExp "[^o]t\\b" --case-sensitive=false --multiline=false
+  m = re.first-matching "pilOt\nsoviet robot\topenoffice"
   expected = ["et"]
   check m expected
 
   // S15.10.2.6_A5_T1.js
-  re = RegExp "^^^^^^^robot\$\$\$\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "robot"
+  re = RegExp "^^^^^^^robot\$\$\$\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "robot"
   expected = ["robot"]
   check m expected
 
   // S15.10.2.7_A4_T11.js
-  re = RegExp "cd*" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcddddefg"
+  re = RegExp "cd*" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcddddefg"
   expected = ["cdddd"]
   check m expected
 
   // S15.10.2.6_A3_T6.js
-  re = RegExp "[^o]t\\b" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilOt\nsoviet robot\topenoffice"
+  re = RegExp "[^o]t\\b" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilOt\nsoviet robot\topenoffice"
   expected = ["Ot"]
   check m expected
 
   // S15.10.2.8_A3_T11.js
-  re = RegExp "a(..(..)..)" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdefgh"
+  re = RegExp "a(..(..)..)" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdefgh"
   expected = ["abcdefg", "bcdefg", "de"]
   check m expected
 
   // S15.10.2.6_A4_T2.js
-  re = RegExp "[f-z]e\\B" --case_sensitive=true --multiline=false
-  m = re.first_matching "devils arise\tfor\nrevil"
+  re = RegExp "[f-z]e\\B" --case-sensitive=true --multiline=false
+  m = re.first-matching "devils arise\tfor\nrevil"
   expected = ["re"]
   check m expected
 
@@ -1132,29 +1132,29 @@ main:
   // Rejected for using /g flag: var __executed = /[^\b]+/g.exec("easy\bto\u0008ride");
 
   // S15.10.2.8_A4_T8.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A2_T1.js
-  re = RegExp "(.*?)a(?!(a+)b\\2c)\\2(.*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "baaabaac"
+  re = RegExp "(.*?)a(?!(a+)b\\2c)\\2(.*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "baaabaac"
   expected = ["baaabaac", "ba", null, "abaac"]
   check m expected
 
   // S15.10.2.6_A1_T1.js
-  re = RegExp "s\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "pairs\nmakes\tdouble"
-  expect_equals null m
+  re = RegExp "s\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "pairs\nmakes\tdouble"
+  expect-equals null m
 
   // S15.10.2.6_A4_T3.js
-  re = RegExp "\\Bo\\B" --case_sensitive=false --multiline=false
-  m = re.first_matching "devils arise\tfOr\nrevil"
+  re = RegExp "\\Bo\\B" --case-sensitive=false --multiline=false
+  m = re.first-matching "devils arise\tfOr\nrevil"
   expected = ["O"]
   check m expected
 
   // S15.10.2.8_A1_T1.js
-  re = RegExp "(?=(a+))" --case_sensitive=true --multiline=false
-  m = re.first_matching "baaabac"
+  re = RegExp "(?=(a+))" --case-sensitive=true --multiline=false
+  m = re.first-matching "baaabac"
   expected = ["", "aaa"]
   check m expected
 
@@ -1162,123 +1162,123 @@ main:
   // Rejected for not using literal regexp: var __executed = __re.exec(__strOriginal);
 
   // S15.10.2.7_A4_T13.js
-  re = RegExp "(x*)(x+)" --case_sensitive=true --multiline=false
-  m = re.first_matching "xxxxxxx"
+  re = RegExp "(x*)(x+)" --case-sensitive=true --multiline=false
+  m = re.first-matching "xxxxxxx"
   expected = ["xxxxxxx", "xxxxxx", "x"]
   check m expected
 
   // S15.10.2.7_A4_T17.js
-  re = RegExp "x*y+\$" --case_sensitive=true --multiline=false
-  m = re.first_matching "xxxxxxyyyyyy"
+  re = RegExp "x*y+\$" --case-sensitive=true --multiline=false
+  m = re.first-matching "xxxxxxyyyyyy"
   expected = ["xxxxxxyyyyyy"]
   check m expected
 
   // S15.10.2.5_A1_T3.js
-  re = RegExp "(aa|aabaac|ba|b|c)*" --case_sensitive=true --multiline=false
-  m = re.first_matching "aabaac"
+  re = RegExp "(aa|aabaac|ba|b|c)*" --case-sensitive=true --multiline=false
+  m = re.first-matching "aabaac"
   expected = ["aaba", "ba"]
   check m expected
 
   // S15.10.2.6_A2_T6.js
-  re = RegExp "^ab" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcde"
+  re = RegExp "^ab" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcde"
   expected = ["ab"]
   check m expected
 
   // S15.10.2.7_A3_T9.js
-  re = RegExp "d+" --case_sensitive=true --multiline=false
-  m = re.first_matching "abcdddddefg"
+  re = RegExp "d+" --case-sensitive=true --multiline=false
+  m = re.first-matching "abcdddddefg"
   expected = ["ddddd"]
   check m expected
 
   // S15.10.2.8_A3_T25.js
-  re = RegExp "(A)?(A.*)" --case_sensitive=true --multiline=false
+  re = RegExp "(A)?(A.*)" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.7_A6_T5.js
-  re = RegExp "(123){1,}x\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "123123x123"
+  re = RegExp "(123){1,}x\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "123123x123"
   expected = ["123123x123", "123"]
   check m expected
 
   // S15.10.2.8_A3_T33.js
-  re = RegExp "^(([a-z]+)*([a-z])\\.)+[a-z]{2,}\$" --case_sensitive=true --multiline=false
+  re = RegExp "^(([a-z]+)*([a-z])\\.)+[a-z]{2,}\$" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A4_T7.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A4_T9.js
-  re = RegExp ".+" --case_sensitive=true --multiline=false
+  re = RegExp ".+" --case-sensitive=true --multiline=false
   // Rejected input (__string);
 
   // S15.10.2.8_A2_T7.js
-  re = RegExp "(\\.(?!com|org)|/)" --case_sensitive=true --multiline=false
-  m = re.first_matching "ah/info"
+  re = RegExp "(\\.(?!com|org)|/)" --case-sensitive=true --multiline=false
+  m = re.first-matching "ah/info"
   expected = ["/", "/"]
   check m expected
 
   // S15.10.2.8_A2_T3.js
-  re = RegExp "Java(?!Script)([A-Z]\\w*)" --case_sensitive=true --multiline=false
-  m = re.first_matching "using of Java language"
-  expect_equals null m
+  re = RegExp "Java(?!Script)([A-Z]\\w*)" --case-sensitive=true --multiline=false
+  m = re.first-matching "using of Java language"
+  expect-equals null m
 
   // S15.10.2.7_A4_T3.js
-  re = RegExp """[^"]*""" --case_sensitive=true --multiline=false
-  m = re.first_matching "before'i'start"
+  re = RegExp """[^"]*""" --case-sensitive=true --multiline=false
+  m = re.first-matching "before'i'start"
   expected = ["before'i'start"]
   check m expected
 
   // S15.10.2.7_A5_T12.js
-  re = RegExp ".?.?.?.?.?.?.?" --case_sensitive=true --multiline=false
-  m = re.first_matching "test"
+  re = RegExp ".?.?.?.?.?.?.?" --case-sensitive=true --multiline=false
+  m = re.first-matching "test"
   expected = ["test"]
   check m expected
 
   // S15.10.2.6_A4_T5.js
-  re = RegExp "\\w\\B" --case_sensitive=true --multiline=false
-  m = re.first_matching "devils arise\tfor\nrevil"
+  re = RegExp "\\w\\B" --case-sensitive=true --multiline=false
+  m = re.first-matching "devils arise\tfor\nrevil"
   expected = ["d"]
   check m expected
 
   // S15.10.2.6_A4_T6.js
-  re = RegExp "\\B\\w" --case_sensitive=true --multiline=false
-  m = re.first_matching "devils arise\tfor\nrevil"
+  re = RegExp "\\B\\w" --case-sensitive=true --multiline=false
+  m = re.first-matching "devils arise\tfor\nrevil"
   expected = ["e"]
   check m expected
 
   // S15.10.2.6_A3_T15.js
-  re = RegExp "\\be" --case_sensitive=true --multiline=false
-  m = re.first_matching "pilot\nsoviet robot\topenoffice"
-  expect_equals null m
+  re = RegExp "\\be" --case-sensitive=true --multiline=false
+  m = re.first-matching "pilot\nsoviet robot\topenoffice"
+  expect-equals null m
 
   // S15.10.2.7_A2_T2.js
-  re = RegExp "\\w{3}\\d?" --case_sensitive=true --multiline=false
-  m = re.first_matching "CELL\uffddbox127"
+  re = RegExp "\\w{3}\\d?" --case-sensitive=true --multiline=false
+  m = re.first-matching "CELL\uffddbox127"
   expected = ["CEL"]
   check m expected
 
   // S15.10.2.8_A2_T10.js
-  re = RegExp "(?!a|b)|c" --case_sensitive=true --multiline=false
-  m = re.first_matching "bc"
+  re = RegExp "(?!a|b)|c" --case-sensitive=true --multiline=false
+  m = re.first-matching "bc"
   expected = [""]
   check m expected
 
   // S15.10.2.13_A1_T12.js
-  re = RegExp "a[b]c" --case_sensitive=true --multiline=false
-  m = re.first_matching "abc"
+  re = RegExp "a[b]c" --case-sensitive=true --multiline=false
+  m = re.first-matching "abc"
   expected = ["abc"]
   check m expected
 
   // S15.10.2.8_A1_T2.js
-  re = RegExp "(?=(a+))a*b\\1" --case_sensitive=true --multiline=false
-  m = re.first_matching "baaabac"
+  re = RegExp "(?=(a+))a*b\\1" --case-sensitive=true --multiline=false
+  m = re.first-matching "baaabac"
   expected = ["aba", "a"]
   check m expected
 
   // S15.10.2.3_A1_T14.js
-  re = RegExp ".+: gr(a|e)y" --case_sensitive=true --multiline=false
-  m = re.first_matching "color: grey"
+  re = RegExp ".+: gr(a|e)y" --case-sensitive=true --multiline=false
+  m = re.first-matching "color: grey"
   expected = ["color: grey", "e"]
   check m expected
