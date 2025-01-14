@@ -1421,8 +1421,9 @@ class MiniExp_ implements RegExp:
     position := start
     if not 0 <= position <= subject.size: throw "OUT_OF_RANGE"
     while position <= subject.size:
-      current := (match_ subject position 0) as MiniExpMatch_
-      if current == null: return at_least_once
+      c := match_ subject position 0
+      if c == null: return at_least_once
+      current := c as MiniExpMatch_
       if current.index == current.end_index:
         position = current.end_index + 1
       else:
