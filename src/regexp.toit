@@ -1407,18 +1407,19 @@ interface RegExp:
   has-matching a/string -> bool
   string-matching a/string -> string?
   all-matches subject/string start/int [block] -> bool
+  number-of-captures -> int
   trace -> none
 
-  constructor pattern/string --multiline/bool=true --case-sensitive/bool=true --vim-mode/bool=false --ed-mode/bool=false:
+  constructor pattern/string --multiline/bool=true --case-sensitive/bool=true:
     return MiniExp_ pattern multiline case-sensitive --mode=JS-MODE_
 
-  constructor.js pattern/string --multiline/bool=true --case-sensitive/bool=true --vim-mode/bool=false --ed-mode/bool=false:
+  constructor.js pattern/string --multiline/bool=true --case-sensitive/bool=true:
     return MiniExp_ pattern multiline case-sensitive --mode=JS-MODE_
 
-  constructor.ed pattern/string --multiline/bool=true --case-sensitive/bool=true --vim-mode/bool=false --ed-mode/bool=false:
+  constructor.ed pattern/string --multiline/bool=true --case-sensitive/bool=true:
     return MiniExp_ pattern multiline case-sensitive --mode=ED-MODE_
 
-  constructor.vim pattern/string --multiline/bool=true --case-sensitive/bool=true --vim-mode/bool=false --ed-mode/bool=false:
+  constructor.vim pattern/string --multiline/bool=true --case-sensitive/bool=true:
     return MiniExp_ pattern multiline case-sensitive --mode=VIM-MODE_
 
 class MiniExp_ implements RegExp:
@@ -1474,6 +1475,9 @@ class MiniExp_ implements RegExp:
       block.call current
       at-least-once = true
     return at-least-once
+
+  number-of-captures -> int:
+    return (initial-register-values_.size - 2 - first-capture-register_) >> 1
 
   match_ a/string start-position/int start-program-counter/int -> Match?:
     registers/List/*<int>*/ := initial-register-values_.copy
@@ -1612,6 +1616,7 @@ class MiniExpParser_:
   mode /int
   charcode-to-token_ /List ::= ?
   escapes_ /Map ::= ?
+  control-characters_ /Map ::= ?
 
   capture-count_ /int := 0
 
@@ -1630,6 +1635,7 @@ class MiniExpParser_:
   constructor .compiler_ .source_ .multiline_ --.mode/int:
     charcode-to-token_ = CHARCODE-TO-TOKEN[mode]
     escapes_ = ESCAPES[mode]
+    control-characters_ = CONTROL-CHARACTERS[mode]
 
   parse -> MiniExpAst_:
     get-token
@@ -1784,7 +1790,7 @@ class MiniExpParser_:
         break
       // Single character or escape code representing a single character.
       // This also advanced position_.
-      code = read-character-class-code_
+      code = read-character-class-code_ (mode == ED-MODE_)
 
       // Check if there are at least 2 more characters and the next is a dash.
       if (not has_ position_ + 1) or
@@ -1796,7 +1802,7 @@ class MiniExpParser_:
         continue
       // Found a dash, try to parse a range.
       position_++;  // Skip the dash.
-      code2/int := read-character-class-code_
+      code2/int := read-character-class-code_ (mode == ED-MODE_)
       if code < 0 or code2 < 0:
         // One end of the range is not a single character, so the range is
         // degenerate.  We add either and and the dash, instead of a range.
@@ -1812,13 +1818,17 @@ class MiniExpParser_:
 
   // Returns a character (possibly from a parsed escape) or a negative number
   // indicating the position of a character class special \s \d or \w.
-  read-character-class-code_ -> int:
+  read-character-class-code_ ed-mode/bool -> int:
     code/int := at_ position_
     if code != '\\':
       position_ += utf-8-bytes code
       return code
     if not has_ position_ + 1: error "Unexpected end of regexp"
     code2/int := at_ position_ + 1
+    if ed-mode:
+      // Ed doesn't have \s, \d etc. inside character classes.
+      position_++
+      return code2
     lower/int := code2 | 0x20
     if (lower == 'd' or lower == 's' or lower == 'w'):
       answer := -position_
@@ -1844,8 +1854,8 @@ class MiniExpParser_:
       code = lex-hex 4
     else if code2 == 'x':
       code = lex-hex 2
-    else if CONTROL-CHARACTERS.contains code2:
-      code = CONTROL-CHARACTERS[code2]
+    else if control-characters_.contains code2:
+      code = control-characters_[code2]
     else:
       code = code2
     // In the case of a malformed escape we just interpret as if the backslash
@@ -1973,7 +1983,7 @@ class MiniExpParser_:
     ED-ESCAPES,
   ]
 
-  static CONTROL-CHARACTERS ::= {
+  static JS-CONTROL-CHARACTERS ::= {
     'b': '\b',
     'f': '\f',
     'n': '\n',
@@ -1981,6 +1991,16 @@ class MiniExpParser_:
     't': '\t',
     'v': '\v',
   }
+
+  static VIM-CONTROL-CHARACTERS ::= JS-CONTROL-CHARACTERS
+
+  static ED-CONTROL-CHARACTERS ::= { : }
+
+  static CONTROL-CHARACTERS ::= [
+    JS-CONTROL-CHARACTERS,
+    VIM-CONTROL-CHARACTERS,
+    ED-CONTROL-CHARACTERS,
+  ]
 
   token-from-charcode code/int -> int:
     if code >= charcode-to-token_.size: return OTHER
@@ -2028,11 +2048,11 @@ class MiniExpParser_:
     if escapes_.contains next-code:
       last-token_ = escapes_[next-code]
       position_ += last-token_ == QUANT ? 1 : 2
-    else if CONTROL-CHARACTERS.contains next-code:
+    else if control-characters_.contains next-code:
       position_ += 2
       last-token_ = OTHER
       last-token-index_ =
-          compiler_.add-to-constant-pool CONTROL-CHARACTERS[next-code]
+          compiler_.add-to-constant-pool control-characters_[next-code]
     else if next-code == 'c':
        if (has_ position_ + 2) and (is-ascii-letter (at_ position_ + 2)):
          last-token_ = OTHER
