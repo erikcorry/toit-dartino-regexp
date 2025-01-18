@@ -16,6 +16,8 @@ main:
   greedy
   look-around
   match
+  vim:           RegExp.vim it
+  vim --ed-mode: RegExp.ed it
 
 foo-bar -> none:
   re := RegExp "foo.*bar"
@@ -327,3 +329,97 @@ match -> none:
   expect-equals "foobar/foo/foobar/" m[0]
   expect-equals "foo" m[1]
   expect-equals "bar" m[2]
+
+vim --ed-mode/bool=false [create] -> none:
+  // In vim mode, plain () are literals.
+  re := create.call "(foo-bar)"
+  m := re.first-matching "(foo-bar)"
+  expect-equals "(foo-bar)" m[0]
+
+  re2 := create.call "\\(foo-bar\\)"
+  m2 := re2.first-matching "(foo-bar)"
+  expect-equals "foo-bar" m2[0]
+  expect-equals "foo-bar" m2[1]
+
+  re3 := create.call "fo\\+-bar+"
+  m3 := re3.first-matching "foo-bar+"
+  expect-equals "foo-bar+" m3[0]
+
+  re4 := create.call "fo\\{2,3\\}-bar{2}"
+  m4 := re4.first-matching "foo-bar{2}"
+  expect-equals "foo-bar{2}" m4[0]
+
+  // Even in vim mode, asterisk is not escaped.
+  re5 := create.call "fo*bar\\*"
+  m5 := re5.first-matching "foobar*"
+  expect-equals "foobar*" m5[0]
+
+  // Vim mode has \< and \> instead of \b.
+  re6 := create.call "\\<foo\\>"
+  m6 := re6.first-matching ".foo."
+  expect-equals "foo" m6[0]
+  m61 := re6.first-matching "foo."
+  expect-equals "foo" m61[0]
+  m62 := re6.first-matching ".foo"
+  expect-equals "foo" m62[0]
+  m63 := re6.first-matching "foo"
+  expect-equals "foo" m63[0]
+  m64 := re6.first-matching "foofoo"
+  expect-equals null m64
+
+  // Matches backslash in Vim mode, word boundary in ed-mode
+  re7 := create.call "\\bfoo\\b"
+  m7 := re7.first-matching ".foo."
+  m71 := re7.first-matching "\x08foo\x08"
+  if ed-mode:
+    expect-equals "foo" m7[0]
+    expect-equals "foo" m71[0]
+  else:
+    expect-equals null m7
+    expect-equals "foo" m71[0][1..4]
+
+  re8 := create.call "\\<.*\\>"
+  m8 := re8.first-matching "foo"
+  expect-equals "foo" m8[0]
+  m81 := re8.first-matching " foo "
+  expect-equals "foo" m81[0]
+  m82 := re8.first-matching "foo bar"
+  expect-equals "foo bar" m82[0]
+  m83 := re8.first-matching "[foo bar]"
+  expect-equals "foo bar" m83[0]
+  m84 := re8.first-matching "øen"  // No unicode support in vim mode either.
+  expect-equals "en" m84[0]
+
+  re9 := create.call "fo\\?o"
+  m9 := re9.first-matching "foo"
+  expect-equals "foo" m9[0]
+  m91 := re9.first-matching "fox"
+  expect-equals "fo" m91[0]
+
+  // Vim mode has \= as a synonym for \?.
+  re10 := create.call "fo\\=o"
+  m10 := re10.first-matching "foo"
+  m101 := re10.first-matching "fox"
+  if ed-mode:
+    expect-equals null m10
+    expect-equals null m101
+  else:
+    expect-equals "foo" m10[0]
+    expect-equals "fo" m101[0]
+
+  // \d is a literal d in ed mode, but a digit in vim mode.
+  re11 := create.call "\\d\\+"
+  m11 := re11.first-matching "123"
+  m111 := re11.first-matching "1a3"
+  m112 := re11.first-matching "a123"
+  m113 := re11.first-matching "d123"
+  if ed-mode:
+    expect-equals null m11
+    expect-equals null m111
+    expect-equals null m112
+    expect-equals "d" m113[0]
+  else:
+    expect-equals "123" m11[0]
+    expect-equals "1" m111[0]
+    expect-equals "123" m112[0]
+    expect-equals "123" m113[0]

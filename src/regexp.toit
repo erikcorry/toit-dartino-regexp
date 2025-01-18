@@ -382,29 +382,56 @@ class MiniExpCompiler_:
   advance-by-rune-width destination-register/int count/int -> none:
     emit_ BC-ADVANCE-BY-RUNE-WIDTH_ destination-register count
 
-  backtrack-if-not-at-word-boundary -> none:
+  backtrack-if-not-at-word-boundary left/bool right/bool -> none:
     non-word-on-left := MiniExpLabel_
     word-on-left := MiniExpLabel_
     at-word-boundary := MiniExpLabel_
     do-backtrack := MiniExpLabel_
 
-    emit_ BC-GOTO-EQ_ CURRENT-POSITION_ ZERO-REGISTER_
-    link non-word-on-left
-    emit_ BC-GOTO-IF-WORD-CHARACTER_ -1
-    link word-on-left
+    if right and left:
+      emit_ BC-GOTO-EQ_ CURRENT-POSITION_ ZERO-REGISTER_
+      link non-word-on-left
+      emit_ BC-GOTO-IF-WORD-CHARACTER_ -1
+      link word-on-left
 
-    bind non-word-on-left
-    emit_ BC-BACKTRACK-EQ_ CURRENT-POSITION_ STRING-LENGTH_
-    emit_ BC-GOTO-IF-WORD-CHARACTER_ 0
-    link at-word-boundary
-    bind do-backtrack
-    backtrack
+      bind non-word-on-left
+      emit_ BC-BACKTRACK-EQ_ CURRENT-POSITION_ STRING-LENGTH_
+      emit_ BC-GOTO-IF-WORD-CHARACTER_ 0
+      link at-word-boundary
+      bind do-backtrack
+      backtrack
 
-    bind word-on-left
-    emit_ BC-GOTO-EQ_ CURRENT-POSITION_ STRING-LENGTH_
-    link at-word-boundary
-    emit_ BC-GOTO-IF-WORD-CHARACTER_ 0
-    link do-backtrack
+      bind word-on-left
+      emit_ BC-GOTO-EQ_ CURRENT-POSITION_ STRING-LENGTH_
+      link at-word-boundary
+      emit_ BC-GOTO-IF-WORD-CHARACTER_ 0
+      link do-backtrack
+    else if left:
+      emit_ BC-GOTO-EQ_ CURRENT-POSITION_ ZERO-REGISTER_
+      link non-word-on-left
+      emit_ BC-GOTO-IF-WORD-CHARACTER_ -1
+      link do-backtrack
+
+      bind non-word-on-left
+      emit_ BC-BACKTRACK-EQ_ CURRENT-POSITION_ STRING-LENGTH_
+      emit_ BC-GOTO-IF-WORD-CHARACTER_ 0
+      link at-word-boundary
+      bind do-backtrack
+      backtrack
+    else if right:
+      emit_ BC-GOTO-EQ_ CURRENT-POSITION_ ZERO-REGISTER_
+      link do-backtrack
+      emit_ BC-GOTO-IF-WORD-CHARACTER_ -1
+      link word-on-left
+
+      bind do-backtrack
+      backtrack
+
+      bind word-on-left
+      emit_ BC-GOTO-EQ_ CURRENT-POSITION_ STRING-LENGTH_
+      link at-word-boundary
+      emit_ BC-GOTO-IF-WORD-CHARACTER_ 0
+      link do-backtrack
 
     bind at-word-boundary
 
@@ -631,16 +658,19 @@ class AtEndOfLine_ extends MultiLineAssertion_:
 
 class WordBoundary_ extends Assertion:
   positive_ /bool ::= ?
+  left_ /bool ::= ?
+  right_ /bool ::= ?
 
-  constructor .positive_:
+  constructor .positive_ .left_ .right_:
 
   generate compiler/MiniExpCompiler_ on-success/MiniExpLabel_ -> none:
     // Positive word boundaries are much more common that negative ones, so we
     // will allow ourselves to generate some pretty horrible code for the
     // negative ones.
     if not positive_:
+      assert: left_ and right_  // No syntax for asymmetric negative.
       compiler.push-backtrack on-success
-    compiler.backtrack-if-not-at-word-boundary
+    compiler.backtrack-if-not-at-word-boundary left_ right_
     if positive_:
       compiler.goto on-success
     else:
@@ -1364,6 +1394,10 @@ class MiniExpMatch_ implements Match:
     if registers_[index] == NO-POSITION_: return null
     return input.copy registers_[index] registers_[index + 1]
 
+JS-MODE_ ::= 0
+VIM-MODE_ ::= 1
+ED-MODE_ ::= 2
+
 interface RegExp:
   pattern -> string
   multiline -> bool
@@ -1375,8 +1409,17 @@ interface RegExp:
   all-matches subject/string start/int [block] -> bool
   trace -> none
 
-  constructor pattern/string --multiline/bool=true --case-sensitive/bool=true:
-    return MiniExp_ pattern multiline case-sensitive
+  constructor pattern/string --multiline/bool=true --case-sensitive/bool=true --vim-mode/bool=false --ed-mode/bool=false:
+    return MiniExp_ pattern multiline case-sensitive --mode=JS-MODE_
+
+  constructor.js pattern/string --multiline/bool=true --case-sensitive/bool=true --vim-mode/bool=false --ed-mode/bool=false:
+    return MiniExp_ pattern multiline case-sensitive --mode=JS-MODE_
+
+  constructor.ed pattern/string --multiline/bool=true --case-sensitive/bool=true --vim-mode/bool=false --ed-mode/bool=false:
+    return MiniExp_ pattern multiline case-sensitive --mode=ED-MODE_
+
+  constructor.vim pattern/string --multiline/bool=true --case-sensitive/bool=true --vim-mode/bool=false --ed-mode/bool=false:
+    return MiniExp_ pattern multiline case-sensitive --mode=VIM-MODE_
 
 class MiniExp_ implements RegExp:
   byte-codes_/List?/*<int>*/ := null
@@ -1392,9 +1435,9 @@ class MiniExp_ implements RegExp:
   trace -> none:
     trace_ = true
 
-  constructor .pattern .multiline .case-sensitive:
+  constructor .pattern .multiline .case-sensitive --mode/int:
     compiler := MiniExpCompiler_ pattern case-sensitive
-    parser := MiniExpParser_ compiler pattern multiline
+    parser := MiniExpParser_ compiler pattern multiline --mode=mode
     ast/MiniExpAst_ := parser.parse
     generate-code_ compiler ast pattern
 
@@ -1548,22 +1591,27 @@ DOLLAR ::= 8
 PIPE ::= 9
 BACK-REFERENCE ::= 10
 WORD-BOUNDARY ::= 11
-NOT-WORD-BOUNDARY ::= 12
-WORD-CHARACTER ::= 13
-NOT-WORD-CHARACTER ::= 14
-DIGIT ::= 15
-NOT-DIGIT ::= 16
-WHITESPACE ::= 17
-NOT-WHITESPACE ::= 18
-NON-CAPTURING ::= 19
-LOOK-AHEAD ::= 20
-NEGATIVE-LOOK-AHEAD ::= 21
-OTHER ::= 22
+LEFT-WORD-BOUNDARY ::= 12
+RIGHT-WORD-BOUNDARY ::= 13
+NOT-WORD-BOUNDARY ::= 14
+WORD-CHARACTER ::= 15
+NOT-WORD-CHARACTER ::= 16
+DIGIT ::= 17
+NOT-DIGIT ::= 18
+WHITESPACE ::= 19
+NOT-WHITESPACE ::= 20
+NON-CAPTURING ::= 21
+LOOK-AHEAD ::= 22
+NEGATIVE-LOOK-AHEAD ::= 23
+OTHER ::= 24
 
 class MiniExpParser_:
   compiler_ /MiniExpCompiler_ ::= ?
   source_ /string ::= ?
   multiline_ /bool ::= ?
+  mode /int
+  charcode-to-token_ /List ::= ?
+  escapes_ /Map ::= ?
 
   capture-count_ /int := 0
 
@@ -1579,7 +1627,9 @@ class MiniExpParser_:
   minimum-repeats_/int? := null
   maximum-repeats_/int? := null
 
-  constructor .compiler_ .source_ .multiline_:
+  constructor .compiler_ .source_ .multiline_ --.mode/int:
+    charcode-to-token_ = CHARCODE-TO-TOKEN[mode]
+    escapes_ = ESCAPES[mode]
 
   parse -> MiniExpAst_:
     get-token
@@ -1618,8 +1668,10 @@ class MiniExpParser_:
       return multiline_ ? AtBeginningOfLine_ : AtStart_
     if accept-token DOLLAR:
       return multiline_ ? AtEndOfLine_ : AtEnd_
-    if accept-token WORD-BOUNDARY: return WordBoundary_ true
-    if accept-token NOT-WORD-BOUNDARY: return WordBoundary_ false
+    if accept-token WORD-BOUNDARY: return WordBoundary_ true true true
+    if accept-token LEFT-WORD-BOUNDARY: return WordBoundary_ true true false
+    if accept-token RIGHT-WORD-BOUNDARY: return WordBoundary_ true false true
+    if accept-token NOT-WORD-BOUNDARY: return WordBoundary_ false true true
     lookahead-ast/MiniExpAst_? := null
     if accept-token LOOK-AHEAD:
       lookahead-ast = LookAhead_ true parse-disjunction compiler_
@@ -1815,6 +1867,25 @@ class MiniExpParser_:
   peek-token token/int -> bool: return token == last-token_
 
   static CHARCODE-TO-TOKEN ::= [
+      JS-CHARCODE-TO-TOKEN,
+      VIM-CHARCODE-TO-TOKEN,
+      VIM-CHARCODE-TO-TOKEN,  // Ed mode has same tokenization as vim mode.
+  ]
+
+  static VIM-CHARCODE-TO-TOKEN := create-vim-charcode-to-token_
+
+  static create-vim-charcode-to-token_ -> List:
+    result := JS-CHARCODE-TO-TOKEN.copy
+    // In vim mode you need backslash to make the following special.
+    result['?'] = OTHER
+    result['{'] = OTHER
+    result['+'] = OTHER
+    result['|'] = OTHER
+    result['('] = OTHER
+    result[')'] = OTHER
+    return result
+
+  static JS-CHARCODE-TO-TOKEN ::= [
     OTHER, OTHER, OTHER, OTHER,      // 0-3
     OTHER, OTHER, OTHER, OTHER,      // 4-7
     OTHER, OTHER, OTHER, OTHER,      // 8-11
@@ -1848,7 +1919,7 @@ class MiniExpParser_:
     OTHER, OTHER, OTHER, QUANT,      // xyz{
     PIPE, OTHER]                     // |}
 
-  static ESCAPES ::= {
+  static JS-ESCAPES ::= {
     'b': WORD-BOUNDARY,
     'B': NOT-WORD-BOUNDARY,
     'w': WORD-CHARACTER,
@@ -1859,6 +1930,49 @@ class MiniExpParser_:
     'S': NOT-WHITESPACE,
   }
 
+  static VIM-ESCAPES ::= {
+    '<': LEFT-WORD-BOUNDARY,
+    '>': RIGHT-WORD-BOUNDARY,
+    'w': WORD-CHARACTER,
+    'W': NOT-WORD-CHARACTER,
+    'd': DIGIT,
+    'D': NOT-DIGIT,
+    's': WHITESPACE,
+    'S': NOT-WHITESPACE,
+    '|': PIPE,
+    '(': L-PAREN,
+    ')': R-PAREN,
+    '=': QUANT,  // \= is a synonym for \? in vim but not ed.
+    '?': QUANT,
+    '+': QUANT,
+    '{': QUANT,
+    '}': QUANT,
+  }
+
+  static ED-ESCAPES ::= {
+    'b': WORD-BOUNDARY,
+    'B': NOT-WORD-BOUNDARY,
+    '<': LEFT-WORD-BOUNDARY,
+    '>': RIGHT-WORD-BOUNDARY,
+    'w': WORD-CHARACTER,
+    'W': NOT-WORD-CHARACTER,
+    's': WHITESPACE,
+    'S': NOT-WHITESPACE,
+    '|': PIPE,
+    '(': L-PAREN,
+    ')': R-PAREN,
+    '?': QUANT,
+    '+': QUANT,
+    '{': QUANT,
+    '}': QUANT,
+  }
+
+  static ESCAPES ::= [
+    JS-ESCAPES,
+    VIM-ESCAPES,
+    ED-ESCAPES,
+  ]
+
   static CONTROL-CHARACTERS ::= {
     'b': '\b',
     'f': '\f',
@@ -1868,9 +1982,9 @@ class MiniExpParser_:
     'v': '\v',
   }
 
-  static token-from-charcode code/int -> int:
-    if code >= CHARCODE-TO-TOKEN.size: return OTHER
-    return CHARCODE-TO-TOKEN[code]
+  token-from-charcode code/int -> int:
+    if code >= charcode-to-token_.size: return OTHER
+    return charcode-to-token_[code]
 
   on-digit position_/int -> bool:
     if not has_ position_: return false
@@ -1887,6 +2001,9 @@ class MiniExpParser_:
     token := last-token_
     if token == BACKSLASH:
       lex-backslash
+      if last_token_ == QUANT:  // Can only happen in vim and ed modes.
+        lex-quantifier
+        position_++
       return
     if token == L-PAREN:
       lex-left-parenthesis
@@ -1908,9 +2025,9 @@ class MiniExpParser_:
   lex-backslash -> none:
     if not has_ (position_ + 1): error "\\ at end of pattern"
     next-code/int := at_ position_ + 1
-    if ESCAPES.contains next-code:
-      position_ += 2
-      last-token_ = ESCAPES[next-code]
+    if escapes_.contains next-code:
+      last-token_ = escapes_[next-code]
+      position_ += last-token_ == QUANT ? 1 : 2
     else if CONTROL-CHARACTERS.contains next-code:
       position_ += 2
       last-token_ = OTHER
@@ -2001,6 +2118,16 @@ class MiniExpParser_:
       position_ += 2
       return
 
+  at-close-curly_ -> bool:
+    if mode == VIM-MODE_ or mode == ED-MODE_:
+      // Look for \} to terminate, not just }.
+      result := has_ (position_ + 1)
+          and (at_ (position_ + 1)) == '}'
+          and (at_ position_) == '\\'
+      if result: position_++
+      return result
+    return (at_ position_) == '}'
+
   lex-quantifier -> none:
     quantifier-code/int := at_ position_
     if quantifier-code == '{':
@@ -2012,25 +2139,25 @@ class MiniExpParser_:
         // and {n,m}.
         minimum-repeats_ = lex-integer 10 null
         if has_ position_:
-          if (at_ position_) == '}':
+          if at-close-curly_:
             maximum-repeats_ = minimum-repeats_
             parsed-repeats = true
           else if (at_ position_) == ',':
             position_++
             if has_ position_:
-              if (at_ position_) == '}':
+              if at-close-curly_:
                 maximum-repeats_ = null;  // No maximum.
                 parsed-repeats = true
               else if on-digit position_:
                 maximum-repeats_ = lex-integer 10 null
-                if (has_ position_) and (at_ position_) == '}':
+                if (has_ position_) and at-close-curly_:
                   parsed-repeats = true
       if parsed-repeats:
         if maximum-repeats_ != null and minimum-repeats_ > maximum-repeats_:
           error "numbers out of order in {} quantifier"
       else:
         // If parsing of the repeats fails then we follow JS in interpreting
-        // the left brace as a literal.
+        // the left brace as a literal.  TODO: vim and ed report an error here.
         position_ = saved-position
         last-token_ = OTHER
         return
@@ -2043,7 +2170,9 @@ class MiniExpParser_:
     else:
       minimum-repeats_ = 0
       maximum-repeats_ = 1
-    if (has_ position_ + 1) and (at_ position_ + 1) == '?':
+    // In vim mode \= is a synonym for \?.
+    if (has_ position_ + 1)
+          and ((at_ position_ + 1) == '?' or (at_ position_ + 1) == '='):
       position_++
       last-was-greedy_ = false
     else:
