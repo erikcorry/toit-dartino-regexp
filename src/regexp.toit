@@ -1028,7 +1028,7 @@ class Atom_ extends MiniExpAst_:
       result = Disjunction_
           result
           (Atom_ (compiler.add-to-constant-pool equivalence[2])).utf-expand compiler
-    assert: equivalence <= 3
+    assert: equivalence.size <= 3
     return result
 
   utf-expand compiler/MiniExpCompiler_ -> MiniExpAst_:
